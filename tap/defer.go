@@ -34,7 +34,7 @@ func Exit() (err *multierror.Error) {
 	defer onexit.mtx.Unlock()
 
 	for _, f := range onexit.f {
-		logrus.Debug("execute deferred function %v", f)
+		logrus.Debugf("execute deferred function %v", f)
 		err = multierror.Append(err, f())
 	}
 	return err
