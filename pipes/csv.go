@@ -5,13 +5,13 @@ import (
 	"encoding/csv"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/tap"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 )
 
 func init() {
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "csv",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return CsvPipe{}
 		},
 	})

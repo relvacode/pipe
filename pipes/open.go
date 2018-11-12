@@ -4,18 +4,18 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 )
 
 func init() {
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "open",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return &OpenPipe{
-				files: valve.All().Args(),
+				files: console.Input().Args(),
 			}
 		},
 	})

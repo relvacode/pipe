@@ -2,7 +2,7 @@ package pipe
 
 import (
 	"context"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 	"strings"
 	"testing"
 )
@@ -15,9 +15,9 @@ func (TestPipe) Go(context.Context, Stream) error {
 
 func TestParse(t *testing.T) {
 	t.Run("pipeline 1", func(t *testing.T) {
-		i, err := Parse(strings.NewReader("test"), Registry{
-			"test": ModuleDefinition{
-				Constructor: func(valve *valve.Control) Pipe {
+		i, err := Parse(strings.NewReader("test"), registry{
+			"test": Pkg{
+				Constructor: func(console *console.Command) Pipe {
 					return TestPipe{}
 				},
 			},
@@ -36,7 +36,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("exec fallback", func(t *testing.T) {
 		const want = "test a b c"
-		i, err := Parse(strings.NewReader(want), Registry{})
+		i, err := Parse(strings.NewReader(want), registry{})
 		if err != nil {
 			t.Fatal(err)
 		}

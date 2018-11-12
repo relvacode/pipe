@@ -5,7 +5,7 @@ import (
 	"github.com/minio/go-homedir"
 	"github.com/pkg/errors"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 	"io"
 	"os"
 	"path/filepath"
@@ -61,14 +61,14 @@ func GetAlias(r io.Reader) (map[string]string, error) {
 func RegisterAlias(alias map[string]string) error {
 	for k, cmd := range alias {
 
-		pipes, err := pipe.Parse(strings.NewReader(cmd), pipe.Pipes)
+		pipes, err := pipe.Parse(strings.NewReader(cmd), pipe.Lib)
 		if err != nil {
 			return errors.Wrapf(err, "parse alias %q", k)
 		}
 
-		pipe.Pipes.Define(pipe.ModuleDefinition{
+		pipe.Define(pipe.Pkg{
 			Name: k,
-			Constructor: func(valve *valve.Control) pipe.Pipe {
+			Constructor: func(console *console.Command) pipe.Pipe {
 				return pipe.SubPipe(pipes)
 			},
 		})

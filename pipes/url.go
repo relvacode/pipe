@@ -3,20 +3,40 @@ package pipes
 import (
 	"context"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/valve"
 	"io"
 	"net/http"
+	"github.com/relvacode/pipe/tap"
+	"github.com/pkg/errors"
+	"github.com/relvacode/pipe/console"
+	"strings"
 )
 
+var methods = []string{
+	http.MethodGet,
+	http.MethodPost,
+	http.MethodDelete,
+	http.MethodHead,
+	http.MethodOptions,
+	http.MethodPatch,
+}
+
 func init() {
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pkg := pipe.Pkg{
 		Name: "url",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
-			return &URLPipe{
-				url: valve.All().String(),
-			}
-		},
-	})
+	}
+	for i := 0; i < len(methods); i ++ {
+		method := methods[i]
+		pkg.Family = append(pkg.Family, pipe.Pkg{
+			Name: strings.ToLower(method),
+			Constructor: func(console *console.Command) pipe.Pipe {
+				return &URLPipe{
+					method: method,
+					url:    console.Input().String(),
+				}
+			},
+		})
+	}
+	pipe.Define(pkg)
 }
 
 var _ io.ReadCloser = (*Response)(nil)
@@ -37,7 +57,8 @@ func (r *Response) Close() error {
 
 // URLPipe calls a URL and emits a Response to the stream
 type URLPipe struct {
-	url *string
+	method string
+	url    *string
 }
 
 func (p URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
@@ -52,7 +73,15 @@ func (p URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return err
 		}
 
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		var body io.Reader
+		if p.method == http.MethodPost {
+			body, err = tap.Reader(f.Object)
+			if err != nil {
+				return errors.Wrap(err, "url POST")
+			}
+		}
+
+		req, err := http.NewRequest(p.method, url, body)
 		if err != nil {
 			return err
 		}

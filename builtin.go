@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/relvacode/pipe/tap"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	Pipes.Define(ExecModule)
+	Define(ExecModule)
 }
 
 // StdinPipe emits a single os.Stdin object
@@ -47,11 +47,11 @@ func (p *EchoPipe) Go(ctx context.Context, stream Stream) error {
 	}
 }
 
-var ExecModule = ModuleDefinition{
+var ExecModule = Pkg{
 	Name: "exec",
-	Constructor: func(valve *valve.Control) Pipe {
+	Constructor: func(console *console.Command) Pipe {
 		return &ExecPipe{
-			command: valve.All().String(),
+			command: console.Input().String(),
 		}
 	},
 }

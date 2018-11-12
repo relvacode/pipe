@@ -5,17 +5,17 @@ import (
 	"context"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/tap"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 	"io"
 	"strings"
 )
 
 func init() {
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "split",
-		Constructor: func(control *valve.Control) pipe.Pipe {
+		Constructor: func(control *console.Command) pipe.Pipe {
 			return &SplitPipe{
-				Split: control.All().DefaultString("\n"),
+				Split: control.Input().DefaultString("\n"),
 			}
 		},
 	})

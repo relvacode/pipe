@@ -45,7 +45,7 @@ func Main() error {
 		return err
 	}
 
-	modules, err := pipe.Parse(r, pipe.Pipes)
+	modules, err := pipe.Parse(r, pipe.Lib)
 	if err != nil {
 		return err
 	}

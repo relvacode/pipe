@@ -1,52 +1,45 @@
-package valve
+package console
 
 import (
 	"github.com/antonmedv/expr"
 	"github.com/google/shlex"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// Control is given to a pipe to easily define input arguments to the pipe
-type Control struct {
-	final []func(s string) error
+type apply func(string) error
+
+// Command is given to a pipe to easily define input arguments to the pipe
+type Command struct {
+	apply apply
 }
 
 // Parse sets all of pointer values of described arguments
-func (c *Control) Parse(input string) (err error) {
-	if c.final == nil {
+func (c *Command) Parse(input string) error {
+	if c.apply == nil {
 		return nil
 	}
-	input = strings.TrimSpace(input)
-	for _, f := range c.final {
-		e := f(input)
-		if e != nil {
-			err = multierror.Append(err, e)
-		}
-
-	}
-	return
+	return c.apply(strings.TrimSpace(input))
 }
 
-// All returns all input as one
-func (c *Control) All() *Arg {
-	a := new(Arg)
-	c.final = append(c.final, func(s string) error {
+// Input returns all input as one
+func (c *Command) Input() *Arg {
+	var a = new(Arg)
+	c.apply = func(s string) error {
 		return a.final(s)
-	})
+	}
 	return a
 }
 
 // Args returns n amount of required arguments
-func (c *Control) Args(n int) []*Arg {
+func (c *Command) Args(n int) []*Arg {
 	args := make([]*Arg, n)
 	for i := range args {
 		args[i] = new(Arg)
 	}
-	c.final = append(c.final, func(s string) error {
+	c.apply = func(s string) error {
 		parsed, err := shlex.Split(s)
 		if err != nil {
 			return err
@@ -55,12 +48,15 @@ func (c *Control) Args(n int) []*Arg {
 			return errors.Errorf("expected %d arguments (given %d)", n, len(parsed))
 		}
 
-		var me error
 		for i, a := range args {
-			me = multierror.Append(me, a.final(parsed[i]))
+			err = a.final(parsed[i])
+			if err != nil {
+				return errors.Wrapf(err, "arg %d (%q)", i, parsed[i])
+			}
 		}
-		return me
-	})
+
+		return nil
+	}
 
 	return args
 }
@@ -103,9 +99,13 @@ func (a *Arg) DefaultString(d string) *string {
 func (a *Arg) Int() *int64 {
 	var value int64
 	var ptr = &value
-	a.final = func(s string) (err error) {
+	a.final = func(s string) (error) {
+		var err error
 		*ptr, err = strconv.ParseInt(s, 10, 64)
-		return
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	return ptr
 }

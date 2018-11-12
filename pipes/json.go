@@ -6,23 +6,27 @@ import (
 	"github.com/pkg/errors"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/tap"
-	"github.com/relvacode/pipe/valve"
 	"io"
+	"bytes"
 )
 
 func init() {
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "json",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
-			return JsonPipe{}
+		Family: []pipe.Pkg{
+			{
+				Name:        "decode",
+				Constructor: pipe.FromFunc(JSONDecode),
+			},
+			{
+				Name:        "encode",
+				Constructor: pipe.FromFunc(JSONEncode),
+			},
 		},
 	})
 }
 
-type JsonPipe struct {
-}
-
-func (JsonPipe) Go(ctx context.Context, stream pipe.Stream) error {
+func JSONDecode(_ context.Context, stream pipe.Stream) error {
 	for {
 		v, err := stream.Read()
 		if err != nil {
@@ -54,6 +58,26 @@ func (JsonPipe) Go(ctx context.Context, stream pipe.Stream) error {
 		}
 		if i == 0 {
 			return errors.New("json: no data in stream")
+		}
+	}
+}
+
+func JSONEncode(_ context.Context, stream pipe.Stream) error {
+	for {
+		f, err := stream.Read()
+		if err != nil {
+			return err
+		}
+
+		var buf = new(bytes.Buffer)
+		err = json.NewEncoder(buf).Encode(f.Object)
+		if err != nil {
+			return err
+		}
+
+		err = stream.Write(buf)
+		if err != nil {
+			return err
 		}
 	}
 }

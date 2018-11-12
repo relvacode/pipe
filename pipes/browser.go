@@ -6,18 +6,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 )
 
 func init() {
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "http.events",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return &BrowserPipe{
-				addr: valve.All().DefaultString("127.0.0.1:3003"),
+				addr: console.Input().DefaultString("127.0.0.1:3003"),
 				data: make(chan string),
 			}
 		},
@@ -77,7 +77,7 @@ func (p *BrowserPipe) eventsHandler(rw http.ResponseWriter, r *http.Request) {
 
 	// Set the headers related to event streaming.
 	rw.Header().Set("Content-Type", "text/event-stream")
-	rw.Header().Set("Cache-Control", "no-cache")
+	rw.Header().Set("Cache-Command", "no-cache")
 	rw.Header().Set("Connection", "keep-alive")
 	rw.Header().Set("Transfer-Encoding", "chunked")
 	rw.WriteHeader(http.StatusOK)

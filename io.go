@@ -20,10 +20,6 @@ type Stream interface {
 	With(*DataFrame) Stream
 }
 
-type Pipe interface {
-	Go(context.Context, Stream) error
-}
-
 var streamIds *uint64
 
 func init() {

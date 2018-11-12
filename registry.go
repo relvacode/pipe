@@ -1,24 +1,35 @@
 package pipe
 
-import "github.com/relvacode/pipe/valve"
+import (
+	"github.com/relvacode/pipe/console"
+	"strings"
+)
 
 // A Builder constructs an instance of the module
 // using the supplied arguments including how the module was called as the first argument.
-type Builder func(args *valve.Control) Pipe
+type Builder func(args *console.Command) Pipe
 
-// A ModuleDefinition describes a module in the Pipes.
-type ModuleDefinition struct {
+// A Pkg describes a module in the Pipes.
+type Pkg struct {
 	Name        string
 	Description string
 	Constructor Builder
+	Family      []Pkg
 }
 
-type Registry map[string]ModuleDefinition
+type registry map[string]Pkg
 
-func (r Registry) Define(m ModuleDefinition) {
-	r[m.Name] = m
+var Lib = make(registry)
+
+func define(m Pkg, family []string) {
+	if m.Constructor != nil {
+		Lib[strings.Join(family, ".")] = m
+	}
+	for _, f := range m.Family {
+		define(f, append(family, strings.ToLower(f.Name)))
+	}
 }
 
-var (
-	Pipes = make(Registry)
-)
+func Define(m Pkg) {
+	define(m, []string{strings.ToLower(m.Name)})
+}

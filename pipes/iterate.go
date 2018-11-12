@@ -3,49 +3,49 @@ package pipes
 import (
 	"context"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 	"reflect"
 	"time"
 )
 
 func init() {
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "skip",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return SkipPipe{
-				Skip: valve.All().Int(),
+				Skip: console.Input().Int(),
 			}
 		},
 	})
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "limit",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return LimitPipe{
-				Limit: valve.All().Int(),
+				Limit: console.Input().Int(),
 			}
 		},
 	})
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "flatten",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return FlattenPipe{}
 		},
 	})
 
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "delay",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return DelayPipe{
-				Template: valve.All().String(),
+				Template: console.Input().String(),
 			}
 		},
 	})
 
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "every",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return EveryPipe{
-				Duration: valve.All().Duration(),
+				Duration: console.Input().Duration(),
 			}
 		},
 	})

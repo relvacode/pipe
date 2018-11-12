@@ -4,18 +4,18 @@ import (
 	"bytes"
 	"context"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 	"io"
 	"net/http"
 	"net/url"
 )
 
 func init() {
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "http.request",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return &HTTPServerPipe{
-				address: valve.All().DefaultString("127.0.0.1:3002"),
+				address: console.Input().DefaultString("127.0.0.1:3002"),
 			}
 		},
 	})

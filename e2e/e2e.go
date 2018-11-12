@@ -53,7 +53,7 @@ func RunPipeTest(inputs []interface{}, pipes []pipe.Runnable) ([]*pipe.DataFrame
 }
 
 func RunConsoleTest(stdin []byte, command string) (string, error) {
-	pipes, err := pipe.Parse(strings.NewReader(command), pipe.Pipes)
+	pipes, err := pipe.Parse(strings.NewReader(command), pipe.Lib)
 	if err != nil {
 		return "", err
 	}

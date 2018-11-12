@@ -3,15 +3,15 @@ package pipes
 import (
 	"context"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 )
 
 func init() {
-	pipe.Pipes.Define(pipe.ModuleDefinition{
+	pipe.Define(pipe.Pkg{
 		Name: "print",
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return &PrintPipe{
-				Template: valve.All().String(),
+				Template: console.Input().String(),
 			}
 		},
 	})

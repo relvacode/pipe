@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"github.com/SteelSeries/bufrr"
 	"github.com/pkg/errors"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -35,7 +35,7 @@ func ScriptReaderOf(command string) (io.Reader, error) {
 	return os.Open(command)
 }
 
-func MakePipe(name string, cmd string, reg Registry) (Pipe, error) {
+func MakePipe(name string, cmd string, reg registry) (Pipe, error) {
 	logrus.Debugf("creating pipe %q using %q", name, cmd)
 
 	if name == "" {
@@ -48,7 +48,7 @@ func MakePipe(name string, cmd string, reg Registry) (Pipe, error) {
 		cmd = name + " " + cmd
 	}
 
-	var control = new(valve.Control)
+	var control = new(console.Command)
 	p := c.Constructor(control)
 	err := control.Parse(cmd)
 	if err != nil {
@@ -57,7 +57,7 @@ func MakePipe(name string, cmd string, reg Registry) (Pipe, error) {
 	return p, nil
 }
 
-func newPipeScanner(r io.Reader, registry Registry) *pipeScanner {
+func newPipeScanner(r io.Reader, registry registry) *pipeScanner {
 	return &pipeScanner{
 		r:   bufrr.NewReader(r),
 		reg: registry,
@@ -71,7 +71,7 @@ type pipeScanner struct {
 	cb bytes.Buffer
 	tb bytes.Buffer
 
-	reg Registry
+	reg registry
 	len int // counts number of parsed modules (at position)
 }
 
@@ -256,7 +256,7 @@ func (s *pipeScanner) Next() (*Runnable, error) {
 	}, nil
 }
 
-func Parse(r io.Reader, reg Registry) ([]Runnable, error) {
+func Parse(r io.Reader, reg registry) ([]Runnable, error) {
 	var (
 		modules []Runnable
 		scanner = newPipeScanner(r, reg)

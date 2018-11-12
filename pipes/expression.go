@@ -5,11 +5,11 @@ import (
 	"github.com/antonmedv/expr"
 	"github.com/pkg/errors"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/valve"
+	"github.com/relvacode/pipe/console"
 )
 
 func init() {
-	pipe.Pipes.Define(
+	pipe.Define(
 		Expr(
 			"select",
 			func(f *pipe.DataFrame, x interface{}, stream pipe.Stream) error {
@@ -17,7 +17,7 @@ func init() {
 			},
 		))
 
-	pipe.Pipes.Define(
+	pipe.Define(
 		Expr(
 			"if",
 			func(f *pipe.DataFrame, x interface{}, stream pipe.Stream) error {
@@ -39,12 +39,12 @@ type ExprEvalFunc func(*pipe.DataFrame, interface{}, pipe.Stream) error
 
 // Expr is a function that constructs a module definition for a JQ style query with
 // additional logic applied to the return value.
-func Expr(name string, f ExprEvalFunc) pipe.ModuleDefinition {
-	return pipe.ModuleDefinition{
+func Expr(name string, f ExprEvalFunc) pipe.Pkg {
+	return pipe.Pkg{
 		Name: name,
-		Constructor: func(valve *valve.Control) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return &ExprPipe{
-				e: valve.All().Expression(),
+				e: console.Input().Expression(),
 				f: f,
 			}
 		},

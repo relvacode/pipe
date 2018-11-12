@@ -44,19 +44,19 @@ func (dt DSLTest) Run(t *testing.T) {
 func TestDSL(t *testing.T) {
 	tests := []DSLTest{
 		{
-			With:   "json::flatten::print {{this.b}}",
+			With:   "json.decode::flatten::print {{this.b}}",
 			Expect: "text",
 		},
 		{
-			With:   "json :: flatten :: print {{this.b}}",
+			With:   "json.decode :: flatten :: print {{this.b}}",
 			Expect: "text",
 		},
 		{
-			With:   "json :: flatten as o :: print {{o.b}}",
+			With:   "json.decode :: flatten as o :: print {{o.b}}",
 			Expect: "text",
 		},
 		{
-			With:   "json :: flatten as o::print {{o.b}}",
+			With:   "json.decode :: flatten as o::print {{o.b}}",
 			Expect: "text",
 		},
 	}
