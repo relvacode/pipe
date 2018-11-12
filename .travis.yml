@@ -1,5 +1,12 @@
 language: go
 sudo: false
+
+#addons:
+#  apt:
+#    packages:
+#    # needed for the nfpm pipe:
+#    - rpm
+
 matrix:
   include:
   - go: 1.x
@@ -9,12 +16,6 @@ matrix:
   - go: tip
   allow_failures:
   - go: tip
-install:
-- script:
-  - go get -t -v ./...
-  - diff -u <(echo -n) <(gofmt -d .)
-  - go vet $(go list ./... | grep -v /vendor/)
-  - go test -v -race ./...
 
 deploy:
 - provider: script
