@@ -17,7 +17,7 @@ func TestParse(t *testing.T) {
 	t.Run("pipeline 1", func(t *testing.T) {
 		i, err := Parse(strings.NewReader("test"), registry{
 			"test": Pkg{
-				Constructor: func(console *console.Command) Pipe {
+				Constructor: func(*console.Command) Pipe {
 					return TestPipe{}
 				},
 			},

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/profile"
 	"github.com/sirupsen/logrus"
@@ -20,7 +19,7 @@ var (
 	flagNoRc  = flag.Bool("norc", false, "Disable profile")
 )
 
-func Main() error {
+func Main() (func() pipe.RuntimeError, error) {
 	flag.Parse()
 	if *flagDebug {
 		logrus.SetLevel(logrus.DebugLevel)
@@ -29,7 +28,7 @@ func Main() error {
 	if !*flagNoRc {
 		err := profile.Load()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -42,12 +41,12 @@ func Main() error {
 
 	r, err := pipe.ScriptReaderOf(flag.Arg(0))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	modules, err := pipe.Parse(r, pipe.Lib)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	tap.Close(r)
 
@@ -59,13 +58,22 @@ func Main() error {
 		}
 	)
 
-	return pipe.RunIO(ctx, i, modules, o)
+	return func() pipe.RuntimeError {
+		return pipe.RunIO(ctx, i, modules, o)
+	}, nil
 }
 
 func main() {
-	err := Main()
+	r, err := Main()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "ERROR ", err)
-		os.Exit(1)
+		logrus.Fatal(err)
+	}
+
+	errors := r()
+	for _, err := range errors {
+		logrus.Error(err)
+	}
+	if len(errors) > 0 {
+		os.Exit(3)
 	}
 }

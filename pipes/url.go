@@ -2,12 +2,12 @@ package pipes
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"github.com/relvacode/pipe"
+	"github.com/relvacode/pipe/console"
+	"github.com/relvacode/pipe/tap"
 	"io"
 	"net/http"
-	"github.com/relvacode/pipe/tap"
-	"github.com/pkg/errors"
-	"github.com/relvacode/pipe/console"
 	"strings"
 )
 
@@ -24,14 +24,16 @@ func init() {
 	pkg := pipe.Pkg{
 		Name: "url",
 	}
-	for i := 0; i < len(methods); i ++ {
+	for i := 0; i < len(methods); i++ {
 		method := methods[i]
 		pkg.Family = append(pkg.Family, pipe.Pkg{
 			Name: strings.ToLower(method),
 			Constructor: func(console *console.Command) pipe.Pipe {
+				cli := console.Options()
 				return &URLPipe{
-					method: method,
-					url:    console.Input().String(),
+					method:  method,
+					headers: cli.Option("header").Map(),
+					url:     cli.Arg(0).String(),
 				}
 			},
 		})
@@ -57,11 +59,12 @@ func (r *Response) Close() error {
 
 // URLPipe calls a URL and emits a Response to the stream
 type URLPipe struct {
-	method string
-	url    *string
+	method  string
+	headers map[string]string
+	url     *string
 }
 
-func (p URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
+func (p *URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
 		f, err := stream.Read()
 		if err != nil {
@@ -84,6 +87,10 @@ func (p URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
 		req, err := http.NewRequest(p.method, url, body)
 		if err != nil {
 			return err
+		}
+
+		for k, v := range p.headers {
+			req.Header.Set(k, v)
 		}
 
 		resp, err := http.DefaultClient.Do(req)

@@ -7,7 +7,7 @@ import (
 
 // A Builder constructs an instance of the module
 // using the supplied arguments including how the module was called as the first argument.
-type Builder func(args *console.Command) Pipe
+type Builder func(*console.Command) Pipe
 
 // A Pkg describes a module in the Pipes.
 type Pkg struct {

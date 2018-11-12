@@ -1,13 +1,13 @@
 package pipes
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/tap"
 	"io"
-	"bytes"
 )
 
 func init() {

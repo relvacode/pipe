@@ -2,6 +2,7 @@ package pipes
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/e2e"
 	"testing"
@@ -18,6 +19,7 @@ func TestJsonPipe(t *testing.T) {
 	)
 	results, err := e2e.RunPipeTest(inputs, pipes)
 	if err != nil {
+		fmt.Printf("%#v", err)
 		t.Fatal(err)
 	}
 

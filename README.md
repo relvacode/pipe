@@ -44,7 +44,7 @@ Use the `if` pipe to filter by expression using [Expr](https://github.com/antonm
 
 ```bash
 # Open all non-empty JSON files and decode their contents
-pipe 'open *.json :: if this.Size > 0 :: json' 
+pipe 'open *.json :: if this.Size > 0 :: json.decode'
 ```
 
 
@@ -57,7 +57,7 @@ pipe 'open *.json :: if this.Size > 0 :: json'
 Use `mktemp`  filter to create a temporary file containing the value's contents.
 
 ```bash
-pipe 'url https://example.org as request | openssl md5 {request | mktemp}'
+pipe 'url.get https://example.org as request | openssl md5 {request | mktemp}'
 ```
 
 
@@ -66,5 +66,5 @@ pipe 'url https://example.org as request | openssl md5 {request | mktemp}'
 Get a new stock quote every 30 seconds
 
 ```bash
-pipe 'every 30s :: print ilmn as stock :: url https://api.iextrading.com/1.0/stock/{{stock}}/quote :: json :: select this.iexRealtimePrice'
+pipe 'every 30s :: print ilmn as stock :: url.get https://api.iextrading.com/1.0/stock/{{stock}}/quote :: json.decode :: select this.iexRealtimePrice'
 ```

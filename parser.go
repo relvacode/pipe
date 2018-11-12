@@ -36,6 +36,7 @@ func ScriptReaderOf(command string) (io.Reader, error) {
 }
 
 func MakePipe(name string, cmd string, reg registry) (Pipe, error) {
+	cmd = strings.TrimSpace(cmd)
 	logrus.Debugf("creating pipe %q using %q", name, cmd)
 
 	if name == "" {
@@ -48,9 +49,9 @@ func MakePipe(name string, cmd string, reg registry) (Pipe, error) {
 		cmd = name + " " + cmd
 	}
 
-	var control = new(console.Command)
-	p := c.Constructor(control)
-	err := control.Parse(cmd)
+	var command = console.NewCommand(name)
+	p := c.Constructor(command)
+	err := command.Set(cmd)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parse %q for %q", cmd, name)
 	}

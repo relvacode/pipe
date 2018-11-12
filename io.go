@@ -38,11 +38,11 @@ func NewStream(ctx context.Context, tag *Tag) *stream {
 }
 
 type stream struct {
-	id  uint64
-	ctx context.Context
-	tag *Tag
-	f   *DataFrame
-	w   int
+	id   uint64
+	ctx  context.Context
+	tag  *Tag
+	f    *DataFrame
+	r, w int
 
 	input chan *DataFrame
 	ok    chan struct{} // closed when downstream is closed
@@ -52,7 +52,7 @@ type stream struct {
 }
 
 func (s *stream) Close() {
-	logrus.Debugf("%s terminated after writing %d frames", s, s.w)
+	logrus.Debugf("%s terminated read:%d write:%d", s, s.r, s.w)
 	if s.up != nil {
 		close(s.up.ok)
 	}
@@ -80,7 +80,8 @@ func (s *stream) Read() (*DataFrame, error) {
 			return nil, io.EOF
 		}
 		s.f = x
-		logrus.Debugf("%s read %s", s, s.f)
+		s.r++
+		logrus.Debugf("%s read %s (%d)", s, s.f, s.r)
 		return x, nil
 	case <-s.ctx.Done():
 		return nil, s.ctx.Err()
@@ -94,10 +95,10 @@ func (s *stream) Write(x interface{}) error {
 	} else {
 		f = s.f.Copy(x, s.tag)
 	}
-	logrus.Debugf("%s write %s", s, f)
 	select {
 	case s.down.input <- f:
 		s.w++
+		logrus.Debugf("%s write %s (%d)", s, f, s.w)
 		return nil
 	case <-s.ok:
 		return io.EOF

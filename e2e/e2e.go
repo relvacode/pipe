@@ -47,9 +47,7 @@ func RunPipeTest(inputs []interface{}, pipes []pipe.Runnable) ([]*pipe.DataFrame
 	exec[len(exec)-1] = pipe.Runnable{
 		Pipe: r,
 	}
-
-	err := pipe.Run(context.Background(), exec)
-	return r.Results, err
+	return r.Results, pipe.Run(context.Background(), exec).ErrorOrNil()
 }
 
 func RunConsoleTest(stdin []byte, command string) (string, error) {
@@ -75,6 +73,6 @@ func RunConsoleTest(stdin []byte, command string) (string, error) {
 	exec[len(exec)-1] = pipe.Runnable{
 		Pipe: r,
 	}
-	err = pipe.Run(context.Background(), exec)
+	err = pipe.Run(context.Background(), exec).ErrorOrNil()
 	return b.String(), err
 }

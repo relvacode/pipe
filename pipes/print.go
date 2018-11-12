@@ -11,7 +11,7 @@ func init() {
 		Name: "print",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &PrintPipe{
-				Template: console.Input().String(),
+				Template: console.String(),
 			}
 		},
 	})

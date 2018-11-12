@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/csv"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/tap"
 	"github.com/relvacode/pipe/console"
+	"github.com/relvacode/pipe/tap"
 )
 
 func init() {

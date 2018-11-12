@@ -3,8 +3,8 @@ package pipe
 import (
 	"context"
 	"fmt"
-	"github.com/relvacode/pipe/tap"
 	"github.com/relvacode/pipe/console"
+	"github.com/relvacode/pipe/tap"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -51,7 +51,7 @@ var ExecModule = Pkg{
 	Name: "exec",
 	Constructor: func(console *console.Command) Pipe {
 		return &ExecPipe{
-			command: console.Input().String(),
+			command: console.String(),
 		}
 	},
 }
@@ -69,28 +69,27 @@ func (p ExecPipe) execFrame(ctx context.Context, f *DataFrame, stream Stream) er
 
 	logrus.Debugf("exec %q", command)
 
-	cmd := exec.CommandContext(ctx, "sh", "-c", command)
-	cmd.Env = os.Environ()
-	cmd.Stderr = os.Stderr
-
 	// Use a custom IO pipe as the StdoutPipe closes the reader after Wait completes
 	pr, pw, err := os.Pipe()
 	if err != nil {
 		return err
 	}
 
+	cmd := exec.CommandContext(ctx, "sh", "-c", command)
+	cmd.Env = os.Environ()
+	cmd.Stderr = os.Stderr
 	cmd.Stdout = pw
-
-	err = stream.Write(pr)
-	if err != nil {
-		return err
-	}
 
 	err = cmd.Start()
 	if err != nil {
 		return err
 	}
-	pw.Close()
+	defer pw.Close()
+
+	err = stream.Write(pr)
+	if err != nil {
+		return err
+	}
 
 	return cmd.Wait()
 }

@@ -15,7 +15,7 @@ func init() {
 		Name: "open",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &OpenPipe{
-				files: console.Input().Args(),
+				files: console.Shell(),
 			}
 		},
 	})

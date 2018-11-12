@@ -3,12 +3,28 @@ package pipe
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"io"
 	"strings"
 )
+
+type RuntimeError []error
+
+func (e RuntimeError) Error() string {
+	var s strings.Builder
+	for _, err := range e {
+		fmt.Fprintln(&s, "  - ", err)
+	}
+	return s.String()
+}
+
+func (e RuntimeError) ErrorOrNil() error {
+	if e == nil || len(e) == 0 {
+		return nil
+	}
+	return e
+}
 
 type Runnable struct {
 	Pipe Pipe
@@ -16,15 +32,10 @@ type Runnable struct {
 }
 
 func (r Runnable) String() string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "%T", r.Pipe)
-	if r.Tag != nil {
-		fmt.Fprintf(&b, " as %s", *r.Tag)
-	}
-	return b.String()
+	return fmt.Sprintf("Pipe(%T: %s)", r.Pipe, r.Tag)
 }
 
-func RunIO(ctx context.Context, input Pipe, modules []Runnable, output Pipe) error {
+func RunIO(ctx context.Context, input Pipe, modules []Runnable, output Pipe) RuntimeError {
 	pipes := make([]Runnable, len(modules)+2)
 	copy(pipes[1:], modules)
 	pipes[0] = Runnable{
@@ -36,17 +47,17 @@ func RunIO(ctx context.Context, input Pipe, modules []Runnable, output Pipe) err
 	return Run(ctx, pipes)
 }
 
-func Run(ctx context.Context, modules []Runnable) error {
-	logrus.Debugf("about to run %d modules", len(modules))
+func Run(ctx context.Context, runnables []Runnable) RuntimeError {
+	logrus.Debugf("about to run %d pipes", len(runnables))
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var streams = make([]*stream, len(modules))
+	var streams = make([]*stream, len(runnables))
 	streams[len(streams)-1] = NewStream(ctx, nil)
 
-	for i := len(modules) - 2; i > -1; i-- {
-		var s = NewStream(ctx, modules[i].Tag)
+	for i := len(runnables) - 2; i > -1; i-- {
+		var s = NewStream(ctx, runnables[i].Tag)
 		s.Down(streams[i+1])
 		streams[i] = s
 	}
@@ -57,11 +68,11 @@ func Run(ctx context.Context, modules []Runnable) error {
 	}
 	logrus.Debugf("streams: %v", streams)
 
-	var errs = make(chan error, len(modules))
+	var errs = make(chan error, len(runnables))
 
-	for i := 0; i < len(modules); i++ {
-		logrus.Debugf("starting module %s %#v", modules[i], modules[i].Pipe)
-		go func(s *stream, e Pipe) {
+	for i := 0; i < len(runnables); i++ {
+		logrus.Debugf("starting module %s %#v", runnables[i], runnables[i].Pipe)
+		go func(s *stream, e Runnable) {
 			defer func() {
 				logrus.Debugf("module %T stopped", e)
 			}()
@@ -76,16 +87,21 @@ func Run(ctx context.Context, modules []Runnable) error {
 				errs <- errors.Errorf("%s", r)
 			}()
 
-			err := e.Go(ctx, s)
+			err := e.Pipe.Go(ctx, s)
 			if err != nil {
-				err = errors.Wrapf(err, "stream %s in pipe %T", s, e)
+				if s.f != nil {
+					logrus.Debugf("begin debug frame dump of %s", s)
+					logrus.Debugf("%#v", *s.f)
+				}
+				err = errors.Wrapf(err, "%s for"+
+					" %s", s, e)
 			}
 			errs <- err
 
-		}(streams[i], modules[i].Pipe)
+		}(streams[i], runnables[i])
 	}
 
-	var complete *multierror.Error
+	var complete RuntimeError
 	for i := 0; i < len(streams); i++ {
 		err := <-errs
 		cause := errors.Cause(err)
@@ -93,7 +109,10 @@ func Run(ctx context.Context, modules []Runnable) error {
 			continue
 		}
 		cancel()
-		complete = multierror.Append(complete, err)
+		complete = append(complete, err)
 	}
-	return complete.ErrorOrNil()
+	if len(complete) == 0 {
+		return nil
+	}
+	return complete
 }

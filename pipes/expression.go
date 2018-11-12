@@ -44,7 +44,7 @@ func Expr(name string, f ExprEvalFunc) pipe.Pkg {
 		Name: name,
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &ExprPipe{
-				e: console.Input().Expression(),
+				e: console.Expression(),
 				f: f,
 			}
 		},

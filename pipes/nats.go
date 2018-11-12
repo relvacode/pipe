@@ -1,14 +1,14 @@
 package pipes
 
 import (
-	"github.com/nats-io/go-nats"
-	"net/url"
-	"context"
-	"github.com/relvacode/pipe"
-	"strings"
 	"bytes"
+	"context"
+	"github.com/nats-io/go-nats"
+	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/console"
 	"github.com/sirupsen/logrus"
+	"net/url"
+	"strings"
 )
 
 func init() {
@@ -18,20 +18,20 @@ func init() {
 		Family: []pipe.Pkg{
 			{
 				Name: "subscribe",
-				Constructor: func(args *console.Command) pipe.Pipe {
+				Constructor: func(console *console.Command) pipe.Pipe {
 					return &NatsReceiverPipe{
 						NatsClient{
-							url: args.Input().String(),
+							url: console.String(),
 						},
 					}
 				},
 			},
 			{
 				Name: "publish",
-				Constructor: func(args *console.Command) pipe.Pipe {
+				Constructor: func(console *console.Command) pipe.Pipe {
 					return &NatsSenderPipe{
 						NatsClient{
-							url: args.Input().String(),
+							url: console.String(),
 						},
 					}
 				},

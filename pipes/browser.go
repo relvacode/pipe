@@ -17,7 +17,7 @@ func init() {
 		Name: "http.events",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &BrowserPipe{
-				addr: console.Input().DefaultString("127.0.0.1:3003"),
+				addr: console.Default("127.0.0.1").String(),
 				data: make(chan string),
 			}
 		},

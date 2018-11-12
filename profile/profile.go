@@ -33,7 +33,7 @@ func OpenProfile() (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	path := filepath.Join(home, ".piperc")
+	path := filepath.Join(home, ".pipe_profile")
 	return os.OpenFile(path, os.O_CREATE|os.O_RDONLY, os.FileMode(0755))
 }
 
@@ -68,7 +68,7 @@ func RegisterAlias(alias map[string]string) error {
 
 		pipe.Define(pipe.Pkg{
 			Name: k,
-			Constructor: func(console *console.Command) pipe.Pipe {
+			Constructor: func(*console.Command) pipe.Pipe {
 				return pipe.SubPipe(pipes)
 			},
 		})

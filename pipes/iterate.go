@@ -13,7 +13,7 @@ func init() {
 		Name: "skip",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return SkipPipe{
-				Skip: console.Input().Int(),
+				Skip: console.Int(),
 			}
 		},
 	})
@@ -21,7 +21,7 @@ func init() {
 		Name: "limit",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return LimitPipe{
-				Limit: console.Input().Int(),
+				Limit: console.Int(),
 			}
 		},
 	})
@@ -36,7 +36,7 @@ func init() {
 		Name: "delay",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return DelayPipe{
-				Template: console.Input().String(),
+				Template: console.String(),
 			}
 		},
 	})
@@ -45,7 +45,7 @@ func init() {
 		Name: "every",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return EveryPipe{
-				Duration: console.Input().Duration(),
+				Duration: console.Duration(),
 			}
 		},
 	})

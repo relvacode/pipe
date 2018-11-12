@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"context"
 	"github.com/relvacode/pipe"
-	"github.com/relvacode/pipe/tap"
 	"github.com/relvacode/pipe/console"
+	"github.com/relvacode/pipe/tap"
 	"io"
 	"strings"
 )
@@ -13,9 +13,9 @@ import (
 func init() {
 	pipe.Define(pipe.Pkg{
 		Name: "split",
-		Constructor: func(control *console.Command) pipe.Pipe {
+		Constructor: func(console *console.Command) pipe.Pipe {
 			return &SplitPipe{
-				Split: control.Input().DefaultString("\n"),
+				Split: console.Default("\n").String(),
 			}
 		},
 	})
