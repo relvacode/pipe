@@ -14,6 +14,8 @@ import (
 	"github.com/relvacode/pipe/tap"
 )
 
+var Rev string = "localbuild"
+
 var (
 	flagDebug = flag.Bool("debug", false, "debug mode")
 	flagNoRc  = flag.Bool("norc", false, "Disable profile")
@@ -23,6 +25,7 @@ func Main() (func() pipe.RuntimeError, error) {
 	flag.Parse()
 	if *flagDebug {
 		logrus.SetLevel(logrus.DebugLevel)
+		logrus.Debugf("pipe %s", Rev)
 	}
 
 	if !*flagNoRc {

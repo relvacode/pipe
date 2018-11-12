@@ -1,5 +1,38 @@
 language: go
-go:
-  - "tip"
-  - "1.11"
-  - "1.10"
+sudo: false
+matrix:
+  include:
+  - go: 1.x
+    env: LATEST=true
+  - go: 1.10.x
+  - go: 1.11.x
+  - go: tip
+  allow_failures:
+  - go: tip
+before_install:
+- go get github.com/mitchellh/gox
+install:
+- 
+script:
+- go get -t -v ./...
+- diff -u <(echo -n) <(gofmt -d .)
+- go vet $(go list ./... | grep -v /vendor/)
+- go test -v -race ./...
+- if [ "${LATEST}" = "true" ]; then gox -os="linux darwin windows" -arch="amd64" -output="pipe.."
+  -ldflags "-X main.Rev=`git rev-parse --short HEAD`" -verbose github.com/relvacode/pipe/cmd/pipe; fi
+
+deploy:
+  provider: releases
+  api_key:
+    secure: iVpeJEJgHE3zd2vMykCxtANxs1Nl5gLPxwUAvuh+dIdE5aJMv6DxMKo6B9ww8R+CALaESXhqwvCCPLoLu4I6xKUiG3eo3w4byfBmtlYsKA6Cy2ZXX5JHyRP3U0d3ffVJLRgSqX/oNEbLQCbiar9bYDARXKr70uIeakL+xHiUwccVlyS3pnT/eKIeX77R/pRNNEoJ81mYKYUjqKiiz4qHbxMWtkM3IoMrwMaxDSh164Yy9baFBs6GUjyHdBzPh6t4pClSvhEWhhipM6y3Eu0TSB1VQ+22ROa9MoEMxJwKu7oFaV7CjqBJszngjQgTNY7bH63sGRrILyk014Nrry5LeUx3cpRaxz9zkw/JMCbZU8sq88/xECv99B77p9r6tR1mpxMtjmnqjkqCPM52eSJKYNeNhtJXbms9EGMsB7Xj6VZZiBeMO8Mm5s0NTqnUTUrp4F/7GjdpiJvinmFv2frrhYrMVJp/74cClySfa3ngyMHhPKP3KPEJqPcJcVskMRxfmhnaIhxU+y0IzV5lu7y2OtNCgSG8olMDqWh75Y4PE0LCvMXfQdy2yQIqsSfN6DkfmVv8whpLw9618ucs66vYAJE1sr0aLaRyCVjYg3r/gvU2ppQJ4KIQTJPLhzsrbM3bWSGrpZqDMA/SHGkO8vBvwtgMkqMgHSEWSznf48XnNiU=
+  file:
+  # The names of the binaries to output, based on the -output template passed to gox.
+  - pipe.windows.amd64.exe
+  - pipe.darwin.amd64
+  - pipe.linux.amd64
+  on:
+    # What to repository to build
+    repo: relvacode/pipe
+    # Only build binaries for tagged commits
+    tags: true
+    condition: $LATEST = true
