@@ -2,6 +2,8 @@
 # Make sure to check the documentation at http://goreleaser.com
 before:
 builds:
+- main:
+    ./cmd/pipe/main.go
 - env:
   - CGO_ENABLED=0
 - ldflags:
