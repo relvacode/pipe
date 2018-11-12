@@ -1,10 +1,11 @@
 language: go
 sudo: false
 
-#addons:
-#  apt:
-#    packages:
-#    # needed for the nfpm pipe:
+addons:
+  apt:
+    packages:
+    - curl
+    # needed for the nfpm pipe:
 #    - rpm
 
 matrix:
