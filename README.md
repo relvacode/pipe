@@ -6,6 +6,9 @@ Powerful continuous stream processing
 
 Run a series of commands or pipes concurrently and manipulate streams using rich native objects.
 
+```
+brew install relvacode/pipe/pipe
+```
 
 ```
 go install github.com/relvacode/pipe/cmd/pipe
