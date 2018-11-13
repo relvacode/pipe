@@ -133,8 +133,8 @@ func (a *Option) Map() map[string]string {
 	return ptr
 }
 
-// Shell returns all arguments split using a shell-like parser
-func (a *Option) Shell() *[]string {
+// Split returns all arguments split using a shell-like parser
+func (a *Option) Split() *[]string {
 	var args = make([]string, 0)
 	var ptr = &args
 	a.init(ptr, func(s string) error {
@@ -142,9 +142,10 @@ func (a *Option) Shell() *[]string {
 		if err != nil {
 			return err
 		}
-		for _, p := range parsed {
-			*ptr = append(*ptr, p)
-		}
+		*ptr = parsed
+		//for _, p := range parsed {
+		//	*ptr = append(*ptr, p)
+		//}
 		return nil
 	})
 	return ptr

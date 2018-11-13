@@ -17,7 +17,7 @@ import (
 var Rev string = "localbuild"
 
 var (
-	flagDebug = flag.Bool("debug", false, "debug mode")
+	flagDebug = flag.Bool("debug", false, "Enable debug logging")
 	flagNoRc  = flag.Bool("norc", false, "Disable profile")
 )
 

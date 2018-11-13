@@ -12,6 +12,12 @@ import (
 	"strings"
 )
 
+const (
+	// ProfileFile is the file name containing the user's pipe profile in that user's home directory.
+	File = ".pipe_profile"
+)
+
+// Load loads the user's alias profile.
 func Load() error {
 	f, err := OpenProfile()
 	if err != nil {
@@ -33,7 +39,7 @@ func OpenProfile() (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	path := filepath.Join(home, ".pipe_profile")
+	path := filepath.Join(home, File)
 	return os.OpenFile(path, os.O_CREATE|os.O_RDONLY, os.FileMode(0755))
 }
 
@@ -68,7 +74,7 @@ func RegisterAlias(alias map[string]string) error {
 
 		pipe.Define(pipe.Pkg{
 			Name: k,
-			Constructor: func(*console.Command) pipe.Pipe {
+			Constructor: func(console *console.Command) pipe.Pipe {
 				return pipe.SubPipe(pipes)
 			},
 		})

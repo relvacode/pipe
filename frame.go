@@ -46,6 +46,17 @@ func (f *DataFrame) String() string {
 	return fmt.Sprintf("DataFrame(%s: %#v: %d refs)", f.Tag, f.Object, len(f.Stack))
 }
 
+// AppendStack creates a copy of this DataFrame with additional stack context
+func (f *DataFrame) AppendStack(s Stack) *DataFrame {
+	nf := f.Copy(f.Object, f.Tag)
+	if s != nil {
+		for k, v := range s {
+			nf.Stack[k] = v
+		}
+	}
+	return nf
+}
+
 // Copy copies this data frame
 func (f *DataFrame) Copy(x interface{}, tag *Tag) *DataFrame {
 	l := len(f.Stack)
