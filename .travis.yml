@@ -1,12 +1,5 @@
 language: go
 sudo: false
-
-#addons:
-#  apt:
-#    packages:
-#    # needed for the nfpm pipe:
-#    - rpm
-
 matrix:
   include:
   - go: 1.x
@@ -16,11 +9,13 @@ matrix:
   - go: tip
   allow_failures:
   - go: tip
-
 deploy:
 - provider: script
   skip_cleanup: true
   script: curl -sL https://git.io/goreleaser | bash
   on:
     tags: true
-    condition: $TRAVIS_OS_NAME = linux && $LATEST = true
+    condition: "$TRAVIS_OS_NAME = linux && $LATEST = true"
+env:
+  matrix:
+    secure: OnCcGJxlHQNqL4ihOoTmqD2J0CqmWd2D+gRNf2G9hTutLT2rUkFo0cWSzWddxjYLhHEL4H24rHOSMfIBzrmsan1jzoAsiCyybB8W01bFFzfjlB4TpOGM/IM6ssaVQCpt7i1PS1pl5aPQT4SgmSV7RAv3xTmbpaWp/ho4CuptYOTcAMm7xrTWdQz6voCGo6WLLnWygXTYVllryrha6lPBWbTwS+UmxEzpYyXBNB/LNX0K+Hao7GJhMiIxucL2vsYRz9Otph2whFpr0PjqfQPZiFxoZRj5JGAjiFST6KM6VHWj57HRb723eCJj42v0bDk4ZkC5DulHt7ejeJg2iJUDuwVuaLyXC7VA+J3wFZdYmGfXJHBTLYBDOoaL0nwfLX12XEEYSjGdb9M5F7qby6gKYK9h/vuRvfrquoZnAypXIIjdsHK1//dWjha+Kn1y8O2CmY99klyaO4gb1lAmO7okDOaMmGu+5lZAQQA09N986OIo4C7rqT6hlqMyawh2THZV0yrpLLkQHa/Le5Vl+RFCcI5LOtFuDD+zdAPTv5nKH1bSumo+wlioV3qs5iTAr/qdzf1hndkACzLN79Y1Dlk2BCVkdVabFuKfYj2WMoDljRtH/sGZPh0HHlYqbyYnzFczCcHgFcp68LCRDFPikIKqgoeioh1VDZtyYXrnodjg/5k=
