@@ -31,6 +31,24 @@ func Close(x interface{}) error {
 	return nil
 }
 
+type forcedCloser struct {
+	io.Reader
+	orig io.Reader
+}
+
+func (c *forcedCloser) Close() error {
+	Close(c.Reader)
+	return Close(c.orig)
+}
+
+// ReadProxyCloser ensures that a wrapped reader stream is closed when the proxied reader is closed.
+func ReadProxyCloser(wrapped, original io.Reader) io.ReadCloser {
+	return &forcedCloser{
+		Reader: wrapped,
+		orig:   original,
+	}
+}
+
 // OpenFile opens a file ready for reading.
 func OpenFile(path string) (*File, error) {
 	f, err := os.Open(path)
