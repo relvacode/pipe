@@ -21,7 +21,6 @@ func init() {
 	})
 }
 
-
 // OpenPipe opens files matching one or more glob expressions.
 // It sends each file handle to the next module.
 type OpenPipe struct {
@@ -29,23 +28,30 @@ type OpenPipe struct {
 }
 
 func (p *OpenPipe) Go(ctx context.Context, stream pipe.Stream) error {
-	for _, n := range *p.files {
-		files, err := filepath.Glob(n)
+	for {
+		_, err := stream.Read()
 		if err != nil {
-			return errors.Wrapf(err, "glob %q", n)
+			return err
 		}
-		logrus.Debugf("%d files found matching pattern %s", len(files), n)
-		for _, fn := range files {
-			f, err := tap.OpenFile(fn)
-			if err != nil {
-				return errors.Wrapf(err, "open %q", fn)
-			}
 
-			err = stream.Write(f)
+		for _, n := range *p.files {
+			files, err := filepath.Glob(n)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "glob %q", n)
+			}
+			logrus.Debugf("%d files found matching pattern %s", len(files), n)
+			for _, fn := range files {
+				f, err := tap.OpenFile(fn)
+				if err != nil {
+					return errors.Wrapf(err, "open %q", fn)
+				}
+
+				err = stream.Write(f)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
-	return nil
+
 }

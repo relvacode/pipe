@@ -78,14 +78,14 @@ func Run(ctx context.Context, runnables []Runnable) RuntimeError {
 			}()
 			defer s.Close()
 
-			// Panic recovery
-			defer func() {
-				r := recover()
-				if r == nil {
-					return
-				}
-				errs <- errors.Errorf("%s", r)
-			}()
+			//// Panic recovery
+			//defer func() {
+			//	r := recover()
+			//	if r == nil {
+			//		return
+			//	}
+			//	errs <- errors.Errorf("%s", r)
+			//}()
 
 			err := e.Pipe.Go(ctx, s)
 			if err != nil {

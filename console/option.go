@@ -33,7 +33,6 @@ func (a *Option) Set(input string) error {
 	}
 	switch a.ptr.Kind() {
 	case reflect.Ptr:
-
 		a.ptr.Elem().Set(a.fallback)
 	case reflect.Map:
 		keys := a.fallback.MapKeys()
@@ -133,7 +132,7 @@ func (a *Option) Map() map[string]string {
 	return ptr
 }
 
-// Split returns all arguments split using a shell-like parser
+// Split returns all arguments split using a shell-like parser.
 func (a *Option) Split() *[]string {
 	var args = make([]string, 0)
 	var ptr = &args
@@ -143,9 +142,31 @@ func (a *Option) Split() *[]string {
 			return err
 		}
 		*ptr = parsed
-		//for _, p := range parsed {
-		//	*ptr = append(*ptr, p)
-		//}
+		return nil
+	})
+	return ptr
+}
+
+// Split the input into exactly n arguments.
+// If the actual amount of parsed arguments is different then an error is raised.
+// Returns a slice where each string pointer will point to that argument index value.
+func (a *Option) SplitNArgs(n int) []*string {
+	var ptr = make([]*string, n)
+	for i := 0; i < n; i++ {
+		var s string
+		ptr[i] = &s
+	}
+	a.init(ptr, func(s string) error {
+		parsed, err := shlex.Split(s)
+		if err != nil {
+			return err
+		}
+		if len(parsed) != n {
+			return errors.Errorf("Expected exactly %d arguments but given %d", n, len(parsed))
+		}
+		for i := 0; i < n; i++ {
+			*ptr[i] = parsed[i]
+		}
 		return nil
 	})
 	return ptr

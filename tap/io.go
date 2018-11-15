@@ -3,7 +3,6 @@ package tap
 
 import (
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"strings"
@@ -24,12 +23,12 @@ type closer interface {
 	Close() error
 }
 
-func Close(x interface{}) {
+func Close(x interface{}) error {
 	c, ok := x.(closer)
 	if ok {
-		logrus.Debugf("close %T", x)
-		c.Close()
+		return c.Close()
 	}
+	return nil
 }
 
 // OpenFile opens a file ready for reading.
