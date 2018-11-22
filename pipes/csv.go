@@ -6,47 +6,61 @@ import (
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/console"
 	"github.com/relvacode/pipe/tap"
+	"io"
 )
 
 func init() {
 	pipe.Define(pipe.Pkg{
-		Name: "csv",
+		Name:        "csv",
+		Description: "Reads a CSV stream and outputs each row as a key-value mapping using the first row as the keys",
 		Constructor: func(console *console.Command) pipe.Pipe {
-			return CsvPipe{}
+			return CSVPipe{}
 		},
 	})
 }
 
-type CsvPipe struct {
+type CSVPipe struct {
 }
 
-func (CsvPipe) streamReader(c *csv.Reader, stream pipe.Stream) error {
-	for {
+func (CSVPipe) readStream(r io.Reader, stream pipe.Stream) error {
+	var c = csv.NewReader(r)
+	var headers []string
+
+	for i := 0; ; i++ {
 		record, err := c.Read()
 		if err != nil {
 			return err
 		}
-		err = stream.Write(record)
+
+		if i == 0 {
+			headers = record
+			continue
+		}
+
+		row := make(map[string]string, len(headers))
+		for i, k := range headers {
+			row[k] = record[i]
+		}
+		err = stream.Write(row)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func (p CsvPipe) Go(ctx context.Context, stream pipe.Stream) error {
+func (p CSVPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		v, err := stream.Read()
+		f, err := stream.Read()
 		if err != nil {
 			return err
 		}
 
-		r, err := tap.Reader(v)
+		r, err := tap.Reader(f.Object)
 		if err != nil {
 			return err
 		}
 
-		c := csv.NewReader(r)
-		err = p.streamReader(c, stream)
+		err = p.readStream(r, stream)
 		tap.Close(r)
 		if err != nil {
 			return err
