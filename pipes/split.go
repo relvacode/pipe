@@ -15,7 +15,7 @@ func init() {
 		Name: "split",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &SplitPipe{
-				Split: console.Default("\n").String(),
+				Split: console.Arg(0).Default("\n").String(),
 			}
 		},
 	})

@@ -21,7 +21,7 @@ func init() {
 				Constructor: func(console *console.Command) pipe.Pipe {
 					return &NatsReceiverPipe{
 						NatsClient{
-							url: console.String(),
+							url: console.Arg(0).String(),
 						},
 					}
 				},
@@ -31,7 +31,7 @@ func init() {
 				Constructor: func(console *console.Command) pipe.Pipe {
 					return &NatsSenderPipe{
 						NatsClient{
-							url: console.String(),
+							url: console.Arg(0).String(),
 						},
 					}
 				},

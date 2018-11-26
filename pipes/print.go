@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/console"
+	"github.com/relvacode/pipe/tap"
 )
 
 func init() {
@@ -11,14 +12,14 @@ func init() {
 		Name: "print",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &PrintPipe{
-				Template: console.String(),
+				Template: console.Any().Template(),
 			}
 		},
 	})
 }
 
 type PrintPipe struct {
-	Template *string
+	Template *tap.Template
 }
 
 func (p *PrintPipe) Go(ctx context.Context, stream pipe.Stream) error {
@@ -28,7 +29,7 @@ func (p *PrintPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return err
 		}
 
-		v, err := f.Var(*p.Template)
+		v, err := p.Template.Render(f.Context())
 		if err != nil {
 			return err
 		}

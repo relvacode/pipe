@@ -2,8 +2,8 @@ package console
 
 import (
 	"github.com/antonmedv/expr"
-	"github.com/google/shlex"
 	"github.com/pkg/errors"
+	"github.com/relvacode/pipe/tap"
 	"reflect"
 	"strconv"
 	"strings"
@@ -12,8 +12,7 @@ import (
 
 type apply func(string) error
 
-// Option describes the conversion of an input string into a destination pointer value.
-// Arguments are required by default unless a default value is supplied.
+// Options convert a string value provided by the user to pointer value described when a pipe is constructed.
 type Option struct {
 	ptr      reflect.Value
 	fallback reflect.Value
@@ -22,7 +21,7 @@ type Option struct {
 
 func (a *Option) Set(input string) error {
 	if !a.ptr.IsValid() || a.apply == nil {
-		panic("set argument without declared values")
+		panic(errors.New("set argument without declared values"))
 	}
 	if input != "" {
 		return a.apply(input)
@@ -39,6 +38,8 @@ func (a *Option) Set(input string) error {
 		for _, k := range keys {
 			a.ptr.SetMapIndex(k, a.fallback.MapIndex(k))
 		}
+	default:
+		panic(errors.Errorf("Cannot set default on %T", a.ptr.Interface()))
 	}
 	return nil
 }
@@ -69,6 +70,16 @@ func (a *Option) String() *string {
 	var ptr = &value
 	a.init(ptr, func(s string) error {
 		*ptr = s
+		return nil
+	})
+	return ptr
+}
+
+func (a *Option) Template() *tap.Template {
+	var t tap.Template
+	var ptr = &t
+	a.init(ptr, func(s string) error {
+		*ptr = tap.Template(s)
 		return nil
 	})
 	return ptr
@@ -127,46 +138,6 @@ func (a *Option) Map() map[string]string {
 			return errors.Errorf("expected key:value in %q", s)
 		}
 		ptr[parts[0]] = strings.Join(parts[1:], ":")
-		return nil
-	})
-	return ptr
-}
-
-// Split returns all arguments split using a shell-like parser.
-func (a *Option) Split() *[]string {
-	var args = make([]string, 0)
-	var ptr = &args
-	a.init(ptr, func(s string) error {
-		parsed, err := shlex.Split(s)
-		if err != nil {
-			return err
-		}
-		*ptr = parsed
-		return nil
-	})
-	return ptr
-}
-
-// Split the input into exactly n arguments.
-// If the actual amount of parsed arguments is different then an error is raised.
-// Returns a slice where each string pointer will point to that argument index value.
-func (a *Option) SplitNArgs(n int) []*string {
-	var ptr = make([]*string, n)
-	for i := 0; i < n; i++ {
-		var s string
-		ptr[i] = &s
-	}
-	a.init(ptr, func(s string) error {
-		parsed, err := shlex.Split(s)
-		if err != nil {
-			return err
-		}
-		if len(parsed) != n {
-			return errors.Errorf("Expected exactly %d arguments but given %d", n, len(parsed))
-		}
-		for i := 0; i < n; i++ {
-			*ptr[i] = parsed[i]
-		}
 		return nil
 	})
 	return ptr

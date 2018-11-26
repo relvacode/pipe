@@ -1,10 +1,9 @@
-package template
+package tap
 
 import (
 	"bytes"
 	"encoding/json"
 	"github.com/flosch/pongo2"
-	"github.com/relvacode/pipe/tap"
 )
 
 func init() {
@@ -13,7 +12,7 @@ func init() {
 }
 
 func TempFileFilter(in *pongo2.Value, _ *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
-	file, err := tap.MkTemp(in.Interface())
+	file, err := MkTemp(in.Interface())
 	if err != nil {
 		return nil, &pongo2.Error{
 			OrigError: err,

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/e2e"
+	"github.com/relvacode/pipe/tap"
 	"io"
 	"io/ioutil"
 	"testing"
@@ -12,8 +13,8 @@ import (
 const testReplaceInput = `goodbye, world!`
 
 func TestReplacePipe(t *testing.T) {
-	var what = `goodbye`
-	var with = `hello`
+	var what tap.Template = `goodbye`
+	var with tap.Template = `hello`
 	var (
 		pipes = []pipe.Runnable{
 			{Pipe: &ReplacePipe{What: &what, With: &with}},

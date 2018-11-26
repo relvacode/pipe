@@ -2,41 +2,41 @@ package pipe
 
 import (
 	"context"
+	"io"
 )
 
-//// RCopyPipe writes value Var to its stream
-//type RCopyPipe struct {
-//	Var interface{}
-//}
-//
-//func (p *RCopyPipe) Go(ctx context.Context, stream Stream) error {
-//	return stream.Write(p.Var)
-//}
-//
-//// WBufferPipe reads from its stream, buffering values until the stream is closed
-//// and then writes all the values as one list to the given output stream.
-//type WBufferPipe struct {
-//	To Stream
-//}
-//
-//func (p *WBufferPipe) Go(ctx context.Context, stream Stream) error {
-//	var values []interface{}
-//	for {
-//		v, err := stream.Read()
-//		if err == io.EOF {
-//			break
-//		}
-//		if err != nil {
-//			return err
-//		}
-//		values = append(values, v)
-//	}
-//	if len(values) == 0 {
-//		return nil
-//	}
-//
-//	return p.To.Write(values)
-//}
+type WFramePipe struct {
+	Frame *DataFrame
+}
+
+func (p *WFramePipe) Go(ctx context.Context, stream Stream) error {
+	return stream.With(p.Frame).Write(p.Frame.Object)
+}
+
+// WBufferPipe reads from its stream, buffering values until the stream is closed
+// and then writes all the values as one list to the given output stream.
+type WBufferPipe struct {
+	To Stream
+}
+
+func (p *WBufferPipe) Go(ctx context.Context, stream Stream) error {
+	var values []interface{}
+	for {
+		f, err := stream.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		values = append(values, f.Object)
+	}
+	if len(values) == 0 {
+		return nil
+	}
+
+	return p.To.Write(values)
+}
 
 type RCopyPipe struct {
 	From Stream
@@ -98,31 +98,26 @@ func (p SubPipe) Go(ctx context.Context, stream Stream) error {
 	return Run(ctx, p.setup(stream))
 }
 
-//// ForkPipe runs a sub-pipe for each input value of the stream.
-//// Each output of the pipe is collected
-//// as a slice of interfaces and forwarded to the next module in the main pipe.
-//type ForkPipe struct {
-//	modules []Pipe
-//}
-//
-//func (p *ForkPipe) Go(ctx context.Context, stream Stream) error {
-//	var modules = make([]Pipe, len(p.modules) + 2)
-//	copy(modules[1:], p.modules)
-//	r, w := &RCopyPipe{}, &WBufferPipe{To: stream}
-//	modules[0] = r
-//	modules[len(modules)-1] = w
-//
-//	for {
-//		v, err := stream.Read()
-//		if err != nil {
-//			return err
-//		}
-//		r.Var = v
-//		err = Run(ctx, modules)
-//		if err != nil {
-//			return err
-//		}
-//	}
-//
-//	return nil
-//}
+type ForkPipe []Runnable
+
+func (p ForkPipe) Go(ctx context.Context, stream Stream) error {
+	var modules = make([]Runnable, len(p)+2)
+	copy(modules[1:], p)
+	r, w := &WFramePipe{}, &WBufferPipe{To: stream}
+	modules[0] = Runnable{Pipe: r}
+	modules[len(modules)-1] = Runnable{Pipe: w}
+
+	for {
+		f, err := stream.Read()
+		if err != nil {
+			return err
+		}
+		r.Frame = f
+		err = Run(ctx, modules).ErrorOrNil()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

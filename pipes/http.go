@@ -15,7 +15,7 @@ func init() {
 		Name: "http.request",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &HTTPServerPipe{
-				address: console.Default("127.0.0.1:3002").String(),
+				address: console.Arg(0).Default("127.0.0.1:3002").String(),
 			}
 		},
 	})

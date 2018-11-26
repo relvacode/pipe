@@ -13,18 +13,17 @@ func init() {
 	pipe.Define(pipe.Pkg{
 		Name: "replace",
 		Constructor: func(console *console.Command) pipe.Pipe {
-			args := console.SplitNArgs(2)
 			return &ReplacePipe{
-				What: args[0],
-				With: args[1],
+				What: console.Arg(0).Template(),
+				With: console.Arg(0).Template(),
 			}
 		},
 	})
 }
 
 type ReplacePipe struct {
-	What *string
-	With *string
+	What *tap.Template
+	With *tap.Template
 }
 
 func (p *ReplacePipe) Go(ctx context.Context, stream pipe.Stream) error {
@@ -34,7 +33,7 @@ func (p *ReplacePipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return err
 		}
 
-		wf, err := f.Var(*p.What)
+		wf, err := p.What.Render(f.Context())
 		if err != nil {
 			return err
 		}
@@ -42,7 +41,7 @@ func (p *ReplacePipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return errors.New("cannot search for empty string in replace")
 		}
 
-		wd, err := f.Var(*p.With)
+		wd, err := p.With.Render(f.Context())
 		if err != nil {
 			return err
 		}

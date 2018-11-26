@@ -15,6 +15,8 @@ import (
 const (
 	delimiter      = ':'
 	comment        = '#'
+	forkStart      = '('
+	forkEnd        = ')'
 	eof       rune = bufrr.EOF
 )
 
@@ -58,15 +60,16 @@ func MakePipe(name string, cmd string, reg registry) (Pipe, error) {
 	return p, nil
 }
 
-func newPipeScanner(r io.Reader, registry registry) *pipeScanner {
+func newPipeScanner(r *bufrr.Reader, registry registry) *pipeScanner {
 	return &pipeScanner{
-		r:   bufrr.NewReader(r),
+		r:   r,
 		reg: registry,
 	}
 }
 
 type pipeScanner struct {
-	r *bufrr.Reader
+	reader io.Reader
+	r      *bufrr.Reader
 
 	nb bytes.Buffer
 	cb bytes.Buffer
@@ -86,14 +89,14 @@ func (s *pipeScanner) isAtEndPipe(r rune) bool {
 	if r == eof {
 		return true
 	}
-	if r != delimiter {
+	if !(r == delimiter || r == forkEnd) {
 		return false
 	}
 	nr, _, _ := s.r.PeekRune()
 	if nr == eof {
 		return true
 	}
-	if nr == delimiter {
+	if nr == delimiter || r == forkEnd {
 		s.r.ReadRune()
 		return true
 	}
@@ -123,93 +126,7 @@ func (s *pipeScanner) readComment() error {
 	}
 }
 
-func (s *pipeScanner) Scan() error {
-	var isAtEndPipe bool
-
-name:
-	for {
-		r, _, err := s.r.ReadRune()
-		if err != nil {
-			return err
-		}
-		if r == eof {
-			// EOF at command name but we do have a name
-			if s.nb.Len() > 0 {
-				return nil
-			}
-			return io.EOF
-		}
-
-		switch {
-		case r == comment:
-			err = s.readComment()
-			if err != nil {
-				return err
-			}
-		case s.isAtEndPipe(r):
-			isAtEndPipe = true
-			break name
-		case unicode.IsSpace(r):
-			if s.nb.Len() > 0 {
-				s.r.UnreadRune()
-				break name
-			}
-			// Strip leading spaces
-			continue
-		case unicode.IsDigit(r) || unicode.IsLetter(r) || r == '.' || r == '/':
-			s.nb.WriteRune(r)
-		default:
-			return errors.Errorf("unexpected character %q", string(r))
-		}
-	}
-
-	if isAtEndPipe {
-		return nil
-	}
-
-args:
-	for {
-		r, _, err := s.r.ReadRune()
-		if err != nil {
-			return err
-		}
-
-		switch {
-		case r == eof:
-			return nil
-		case r == comment:
-			err = s.readComment()
-			if err != nil {
-				return err
-			}
-		case s.isAtEndPipe(r):
-			isAtEndPipe = true
-			break args
-		case unicode.IsSpace(r):
-			nr, _, _ := s.r.PeekRune()
-			if nr == 'a' {
-				s.r.ReadRune()
-				enr, _, _ := s.r.PeekRune()
-				if enr == 's' {
-					s.r.ReadRune()
-					break args
-				}
-				s.r.UnreadRune()
-			}
-
-			// No command yet, empty spaces
-			if s.cb.Len() == 0 {
-				continue args
-			}
-		}
-
-		s.cb.WriteRune(r)
-	}
-
-	if isAtEndPipe {
-		return nil
-	}
-
+func (s *pipeScanner) scanTag() error {
 	for {
 		r, _, err := s.r.ReadRune()
 		if err != nil {
@@ -236,12 +153,120 @@ args:
 	}
 }
 
+func (s *pipeScanner) Scan() (bool, error) {
+	var isAtEndPipe bool
+
+name:
+	for {
+		r, _, err := s.r.ReadRune()
+		if err != nil {
+			return false, err
+		}
+		if r == eof {
+			// EOF at command name but we do have a name
+			if s.nb.Len() > 0 {
+				return false, nil
+			}
+			return false, io.EOF
+		}
+
+		switch {
+		case r == forkStart && s.nb.Len() == 0:
+			nr, _, _ := s.r.PeekRune()
+			if nr == forkStart {
+				s.r.ReadRune()
+				return true, nil
+			}
+		case r == comment:
+			err = s.readComment()
+			if err != nil {
+				return false, err
+			}
+		case s.isAtEndPipe(r):
+			isAtEndPipe = true
+			break name
+		case unicode.IsSpace(r):
+			if s.nb.Len() > 0 {
+				s.r.UnreadRune()
+				break name
+			}
+			// Strip leading spaces
+			continue
+		case unicode.IsDigit(r) || unicode.IsLetter(r) || r == '.' || r == '/':
+			s.nb.WriteRune(r)
+		default:
+			return false, errors.Errorf("unexpected character %q", string(r))
+		}
+	}
+
+	if isAtEndPipe {
+		return false, nil
+	}
+
+args:
+	for {
+		r, _, err := s.r.ReadRune()
+		if err != nil {
+			return false, err
+		}
+
+		switch {
+		case r == eof:
+			return false, nil
+		case r == comment:
+			err = s.readComment()
+			if err != nil {
+				return false, err
+			}
+		case s.isAtEndPipe(r):
+			isAtEndPipe = true
+			break args
+		case unicode.IsSpace(r):
+			nr, _, _ := s.r.PeekRune()
+			if nr == 'a' {
+				s.r.ReadRune()
+				enr, _, _ := s.r.PeekRune()
+				if enr == 's' {
+					s.r.ReadRune()
+					break args
+				}
+				s.r.UnreadRune()
+			}
+			//
+			//// No command yet, empty spaces
+			//if s.cb.Len() == 0 {
+			//	continue args
+			//}
+		}
+
+		s.cb.WriteRune(r)
+	}
+
+	if isAtEndPipe {
+		return false, nil
+	}
+
+	return false, s.scanTag()
+}
+
 func (s *pipeScanner) Next() (*Runnable, error) {
 	defer s.Reset()
 
-	err := s.Scan()
+	fork, err := s.Scan()
 	if err != nil {
 		return nil, err
+	}
+
+	if fork {
+		logrus.Debugf("start parsing forked pipe")
+		forked, err := parse(s.r, s.reg)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Runnable{
+			Pipe: ForkPipe(forked),
+		}, nil
 	}
 
 	m, err := MakePipe(s.nb.String(), s.cb.String(), s.reg)
@@ -258,6 +283,10 @@ func (s *pipeScanner) Next() (*Runnable, error) {
 }
 
 func Parse(r io.Reader, reg registry) ([]Runnable, error) {
+	return parse(bufrr.NewReader(r), reg)
+}
+
+func parse(r *bufrr.Reader, reg registry) ([]Runnable, error) {
 	var (
 		modules []Runnable
 		scanner = newPipeScanner(r, reg)

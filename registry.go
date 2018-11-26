@@ -27,12 +27,18 @@ func FromFunc(f Func) Builder {
 	}
 }
 
-// A Pkg describes a module in the Pipes.
+// A Pkg describes a package - a pipe and/or a family of pipes.
 type Pkg struct {
-	Name        string
+	// Name is the one-word name of this pipe or package.
+	Name string
+	// Description is a brief one-line description on the purpose of the pipe.
+	// Not used if a Constructor is not defined.
 	Description string
+	// Constructor is a function to build an instance of this pipe.
 	Constructor Builder
-	Family      []Pkg
+	// Family is a list of additional sub-packages that belong to this package.
+	// The final pipe name is the entire family tree joined with `.`
+	Family []Pkg
 }
 
 type registry map[string]Pkg

@@ -13,7 +13,7 @@ func init() {
 		Name: "skip",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return SkipPipe{
-				Skip: console.Int(),
+				Skip: console.Arg(0).Int(),
 			}
 		},
 	})
@@ -21,7 +21,7 @@ func init() {
 		Name: "limit",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return LimitPipe{
-				Limit: console.Int(),
+				Limit: console.Arg(0).Int(),
 			}
 		},
 	})
@@ -36,7 +36,7 @@ func init() {
 		Name: "delay",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return DelayPipe{
-				Template: console.String(),
+				Duration: console.Arg(0).Duration(),
 			}
 		},
 	})
@@ -45,7 +45,7 @@ func init() {
 		Name: "every",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return EveryPipe{
-				Duration: console.Duration(),
+				Duration: console.Arg(0).Duration(),
 			}
 		},
 	})
@@ -130,7 +130,7 @@ func (p FlattenPipe) Go(ctx context.Context, stream pipe.Stream) error {
 }
 
 type DelayPipe struct {
-	Template *string
+	Duration *time.Duration
 }
 
 func (p DelayPipe) Go(ctx context.Context, stream pipe.Stream) error {
@@ -140,17 +140,7 @@ func (p DelayPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return err
 		}
 
-		s, err := f.Var(*p.Template)
-		if err != nil {
-			return err
-		}
-
-		d, err := time.ParseDuration(s)
-		if err != nil {
-			return err
-		}
-
-		t := time.After(d)
+		t := time.After(*p.Duration)
 		select {
 		case <-ctx.Done():
 			return ctx.Err()

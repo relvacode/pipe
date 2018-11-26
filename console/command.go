@@ -1,21 +1,19 @@
 package console
 
-import (
-	"flag"
-)
+import "github.com/google/shlex"
 
 func NewCommand(name string) *Command {
 	return &Command{
-		name:   name,
-		Option: new(Option),
+		name:    name,
+		Options: NewOptions(name),
 	}
 }
 
 // Command is given to a pipe to easily define input arguments to the pipe
 type Command struct {
-	name    string
-	options *Options
-	*Option
+	name  string
+	apply apply
+	*Options
 }
 
 func (c *Command) Name() string {
@@ -24,19 +22,33 @@ func (c *Command) Name() string {
 
 // Set parses and sets all of pointer values of described arguments
 func (c *Command) Set(input string) error {
-	if c.options != nil {
-		return c.options.Set(input)
+	if c.apply != nil {
+		return c.apply(input)
 	}
-	if c.Option.apply != nil {
-		return c.Option.Set(input)
-	}
-	return nil
+	return c.Options.Set(input)
 }
 
-func (c *Command) Options() *Options {
-	c.options = &Options{
-		flag: flag.NewFlagSet(c.name, flag.ContinueOnError),
-		args: make(map[int]*Option),
+// Split splits the command into basic strings using a shell-style parser
+func (c *Command) Split() *[]string {
+	var parts []string
+	var ptr = &parts
+	c.apply = func(input string) error {
+		p, err := shlex.Split(input)
+		if err != nil {
+			return err
+		}
+
+		for _, s := range p {
+			*ptr = append(*ptr, s)
+		}
+		return nil
 	}
-	return c.options
+	return ptr
+}
+
+// Any returns an Option that accepts any input (or none)
+func (c *Command) Any() *Option {
+	var o = new(Option)
+	c.apply = o.Set
+	return o
 }

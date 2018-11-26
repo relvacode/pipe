@@ -3,7 +3,6 @@ package pipe
 import (
 	"fmt"
 	"github.com/flosch/pongo2"
-	_ "github.com/relvacode/pipe/template"
 	"io"
 )
 
@@ -102,26 +101,4 @@ func (f *DataFrame) Context() pongo2.Context {
 		f.context[string(*f.Tag)] = f.Object
 	}
 	return f.context
-}
-
-func (f *DataFrame) Var(s string) (string, error) {
-	pongo2.SetAutoescape(false)
-	t, err := pongo2.FromString(s)
-	if err != nil {
-		return "", err
-	}
-	return t.Execute(f.Context())
-}
-
-func (f *DataFrame) Vars(s []string) ([]string, error) {
-	var err error
-	var vars = make([]string, len(s))
-
-	for i := 0; i < len(s); i++ {
-		vars[i], err = f.Var(s[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return vars, nil
 }

@@ -51,18 +51,18 @@ var ExecModule = Pkg{
 	Name: "exec",
 	Constructor: func(console *console.Command) Pipe {
 		return &ExecPipe{
-			command: console.String(),
+			command: console.Any().Template(),
 		}
 	},
 }
 
 // ExecPipe executes a command
 type ExecPipe struct {
-	command *string
+	command *tap.Template
 }
 
 func (p ExecPipe) execFrame(ctx context.Context, f *DataFrame, stream Stream) error {
-	command, err := f.Var(*p.command)
+	command, err := p.command.Render(f.Context())
 	if err != nil {
 		return err
 	}

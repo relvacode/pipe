@@ -14,6 +14,13 @@ func (flagOption) String() string {
 	return ""
 }
 
+func NewOptions(name string) *Options {
+	return &Options{
+		flag: flag.NewFlagSet(name, flag.ContinueOnError),
+		args: make(map[int]*Option),
+	}
+}
+
 type Options struct {
 	flag *flag.FlagSet
 	args map[int]*Option
@@ -32,7 +39,7 @@ func (p *Options) Set(input string) error {
 	for i, a := range p.args {
 		err = a.Set(p.flag.Arg(i))
 		if err != nil {
-			return errors.Wrapf(err, "narg %d", i)
+			return errors.Wrapf(err, "arg %d", i)
 		}
 	}
 	return nil

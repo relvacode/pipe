@@ -29,11 +29,10 @@ func init() {
 		pkg.Family = append(pkg.Family, pipe.Pkg{
 			Name: strings.ToLower(method),
 			Constructor: func(console *console.Command) pipe.Pipe {
-				cli := console.Options()
 				return &URLPipe{
 					method:  method,
-					headers: cli.Option("header").Map(),
-					url:     cli.Arg(0).String(),
+					headers: console.Option("header").Map(),
+					url:     console.Arg(0).Template(),
 				}
 			},
 		})
@@ -61,7 +60,7 @@ func (r *Response) Close() error {
 type URLPipe struct {
 	method  string
 	headers map[string]string
-	url     *string
+	url     *tap.Template
 }
 
 func (p *URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
@@ -71,7 +70,7 @@ func (p *URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return err
 		}
 
-		url, err := f.Var(*p.url)
+		url, err := p.url.Render(f.Context())
 		if err != nil {
 			return err
 		}

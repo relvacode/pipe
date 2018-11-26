@@ -59,6 +59,18 @@ func TestDSL(t *testing.T) {
 			With:   "json.decode :: flatten as o::print {{o.b}}",
 			Expect: "text",
 		},
+		{
+			With:   "json.decode :: ((select this[0].b))",
+			Expect: "[text]",
+		},
+		{
+			With:   "json.decode ::((select this[0].b))",
+			Expect: "[text]",
+		},
+		{
+			With:   "json.decode ::(( select this[0].b   ))",
+			Expect: "[text]",
+		},
 	}
 
 	for _, test := range tests {
