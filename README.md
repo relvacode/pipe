@@ -4,7 +4,7 @@ Powerful continuous stream processing
 
 [![Build Status](https://travis-ci.org/relvacode/pipe.svg?branch=master)](https://travis-ci.org/relvacode/pipe)
 
-Run a series of commands or pipes concurrently and manipulate streams using rich native objects.
+Run a series of native or system commands concurrently and manipulate streams using rich native objects
 
 ```
 brew install relvacode/pipe/pipe
@@ -19,15 +19,15 @@ go install github.com/relvacode/pipe/cmd/pipe
 
 ### Pipes
 
-A pipe can either be a built-in native pipe, or fallback to a program on the system.
+A pipe can either be a built-in native pipe, or fallback to a program or shell call on the system.
 
 To join the output of one pipe to the input of the next use `::`.
 
 The first pipe in a pipeline is given a `stdin` object and all outputs of the last pipe are echoed to `stdout`.
 
-### Context
+### Context and Tagging
 
-With each object passed to a pipe, a context is given which traces the history of that chain.
+With each object passed to a pipe a context is given which traces the history of that object and its parents when tagged.
 
 Use `as <name>` to tag each value produced by that pipe and refer to it in a later pipe.
 
@@ -35,10 +35,10 @@ Use `as <name>` to tag each value produced by that pipe and refer to it in a lat
 
 ### Templating
 
-Use Django style template provided by [Pongo2](https://github.com/flosch/pongo2) to access values in pipe arguments.
+Use Django style templates provided by [Pongo2](https://github.com/flosch/pongo2) to template arguments to shell calls or some native pipes
 
 ```
-pipe 'print World as name :: print Hello, {{world}}
+pipe 'print World as name :: print Hello, {{name}}
 ```
 
 ### Filtering
@@ -50,7 +50,6 @@ Use the `if` pipe to filter by expression using [Expr](https://github.com/antonm
 pipe 'open *.json :: if this.Size > 0 :: json.decode'
 ```
 
-
 ## Advanced
 
 ### Templating
@@ -60,7 +59,7 @@ pipe 'open *.json :: if this.Size > 0 :: json.decode'
 Use `mktemp`  filter to create a temporary file containing the value's contents.
 
 ```bash
-pipe 'url.get https://example.org as request | openssl md5 {request | mktemp}'
+pipe 'url.get https://example.org as request :: openssl md5 {request | mktemp}'
 ```
 
 

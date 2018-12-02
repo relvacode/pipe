@@ -29,10 +29,14 @@ type EchoPipe struct {
 }
 
 func (p *EchoPipe) Go(ctx context.Context, stream Stream) error {
-	for {
+	for i := 0; ; i++ {
 		f, err := stream.Read()
 		if err != nil {
 			return err
+		}
+
+		if i > 0 {
+			fmt.Print("\n")
 		}
 
 		switch o := f.Object.(type) {
@@ -43,7 +47,6 @@ func (p *EchoPipe) Go(ctx context.Context, stream Stream) error {
 			fmt.Fprint(p.Writer, f.Object)
 		}
 
-		fmt.Print("\n")
 	}
 }
 

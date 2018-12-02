@@ -118,6 +118,4 @@ func (p ForkPipe) Go(ctx context.Context, stream Stream) error {
 			return err
 		}
 	}
-
-	return nil
 }
