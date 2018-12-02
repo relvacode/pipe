@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+var (
+	// ErrNotFile is raised when a file object that does not point to a real file is accessed.
+	ErrNotFile = errors.New("not a file")
+)
+
 // Reader gets a reader interface from an input interface
 func Reader(x interface{}) (io.Reader, error) {
 	switch v := x.(type) {
@@ -51,38 +56,52 @@ func ReadProxyCloser(wrapped, original io.Reader) io.ReadCloser {
 
 // OpenFile opens a file ready for reading.
 func OpenFile(path string) (*File, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	i, err := f.Stat()
+	i, err := os.Stat(path)
 	if err != nil {
 		return nil, err
 	}
 
-	if i.IsDir() {
-		return nil, errors.Errorf("cannot open %q: is directory", path)
+	var f *os.File
+	if !i.IsDir() {
+		f, err = os.Open(path)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &File{
-		Path: path,
-		Name: f.Name(),
-		Size: i.Size(),
-		File: f,
+		Path:      path,
+		Name:      i.Name(),
+		Size:      i.Size(),
+		Mode:      i.Mode(),
+		Directory: i.IsDir(),
+		File:      f,
 	}, nil
 }
 
 type File struct {
-	Name string
-	Path string
-	Size int64
-	File *os.File
+	Name      string
+	Path      string
+	Size      int64
+	Mode      os.FileMode
+	Directory bool
+	File      *os.File
+}
+
+func (f File) String() string {
+	return f.Name
 }
 
 func (f *File) Read(b []byte) (int, error) {
+	if f.File == nil {
+		return 0, ErrNotFile
+	}
 	return f.File.Read(b)
 }
 
 func (f *File) Close() error {
+	if f.File == nil {
+		return ErrNotFile
+	}
 	return f.File.Close()
 }
