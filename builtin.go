@@ -3,6 +3,7 @@ package pipe
 import (
 	"context"
 	"fmt"
+	"github.com/google/shlex"
 	"github.com/relvacode/pipe/console"
 	"github.com/relvacode/pipe/tap"
 	"github.com/sirupsen/logrus"
@@ -10,10 +11,6 @@ import (
 	"os"
 	"os/exec"
 )
-
-func init() {
-	Define(ExecModule)
-}
 
 // StdinPipe emits a single os.Stdin object
 type StdinPipe struct {
@@ -50,27 +47,36 @@ func (p *EchoPipe) Go(ctx context.Context, stream Stream) error {
 	}
 }
 
-var ExecModule = Pkg{
-	Name: "exec",
-	Constructor: func(console *console.Command) Pipe {
-		return &ExecPipe{
-			command: console.Any().Template(),
-		}
-	},
+func NewExecPkg(name string) Pkg {
+	return Pkg{
+		Name: name,
+		Constructor: func(console *console.Command) Pipe {
+			return &ExecPipe{
+				name: name,
+				args: console.Any().Default(tap.Template("")).Template(),
+			}
+		},
+	}
 }
 
-// ExecPipe executes a command
+// ExecPipe executes a args
 type ExecPipe struct {
-	command *tap.Template
+	name string
+	args *tap.Template
 }
 
 func (p ExecPipe) execFrame(ctx context.Context, f *DataFrame, stream Stream) error {
-	command, err := p.command.Render(f.Context())
+	fa, err := p.args.Render(f.Context())
 	if err != nil {
 		return err
 	}
 
-	logrus.Debugf("exec %q", command)
+	args, err := shlex.Split(fa)
+	if err != nil {
+		return err
+	}
+
+	logrus.Debugf("exec %q", args)
 
 	// Use a custom IO pipe as the StdoutPipe closes the reader after Wait completes
 	pr, pw, err := os.Pipe()
@@ -78,7 +84,7 @@ func (p ExecPipe) execFrame(ctx context.Context, f *DataFrame, stream Stream) er
 		return err
 	}
 
-	cmd := exec.CommandContext(ctx, "sh", "-c", command)
+	cmd := exec.CommandContext(ctx, p.name, args...)
 	cmd.Env = os.Environ()
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = pw

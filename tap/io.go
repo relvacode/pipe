@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -69,8 +70,10 @@ func OpenFile(path string) (*File, error) {
 		}
 	}
 
+	abs, _ := filepath.Abs(path)
 	return &File{
 		Path:      path,
+		AbsPath:   abs,
 		Name:      i.Name(),
 		Size:      i.Size(),
 		Mode:      i.Mode(),
@@ -82,6 +85,7 @@ func OpenFile(path string) (*File, error) {
 type File struct {
 	Name      string
 	Path      string
+	AbsPath   string
 	Size      int64
 	Mode      os.FileMode
 	Directory bool

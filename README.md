@@ -19,11 +19,11 @@ go install github.com/relvacode/pipe/cmd/pipe
 
 ### Pipes
 
-A pipe can either be a built-in native pipe, or fallback to a program or shell call on the system.
+A pipe can either be a built-in native pipe, or fallback to a program on the system.
 
 To join the output of one pipe to the input of the next use `::`.
 
-The first pipe in a pipeline is given a `stdin` object and all outputs of the last pipe are echoed to `stdout`.
+The first pipe in the series is given a `stdin` object and all outputs of the last pipe are echoed to `stdout`.
 
 ### Context and Tagging
 
@@ -35,10 +35,16 @@ Use `as <name>` to tag each value produced by that pipe and refer to it in a lat
 
 ### Templating
 
-Use Django style templates provided by [Pongo2](https://github.com/flosch/pongo2) to template arguments to shell calls or some native pipes
+Use Django style templates provided by [Pongo2](https://github.com/flosch/pongo2) in pipe arguments
 
 ```
 pipe 'print World as name :: print Hello, {{name}}
+```
+
+Use `.String` on most objects to get a more human readable representation of an object
+
+```
+pipe 'open * :: print {{this.Mode.String}}'
 ```
 
 ### Filtering

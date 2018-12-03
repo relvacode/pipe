@@ -114,8 +114,6 @@ func (c *Command) Read(b bufrr.RunePeeker) error {
 			return io.EOF
 		case IsNextPipe(b):
 			return EOP
-		case IsStartTag(b):
-			return c.Args.t.Read(b)
 		case c.b.Len() == 0 && unicode.IsSpace(r):
 		case c.b.Len() > 0 && unicode.IsSpace(r):
 			b.ReadRune()

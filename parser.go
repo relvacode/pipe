@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// ScriptReaderOf obtains the script reader for the given command string.
+// ScriptReaderOf obtains the script reader for the given args string.
 // This string can either be a file name or a pipe script directly.
 func ScriptReaderOf(command string) (io.Reader, error) {
 	i, err := os.Stat(command)
@@ -35,15 +35,17 @@ func Make(name string, cmd string, from registry) (Pipe, error) {
 		return nil, errors.New("missing pipe name")
 	}
 	// Get the module from the Pipes
-	c, ok := from[name]
+	pkg, ok := from[name]
 	if !ok {
-		c = ExecModule
-		cmd = name + " " + cmd
+		pkg = NewExecPkg(name)
 	}
 
-	var command = console.NewCommand(name)
-	p := c.Constructor(command)
-	err := command.Set(cmd)
+	var (
+		c = console.NewCommand(name)
+		p = pkg.Constructor(c)
+	)
+
+	err := c.Set(cmd)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parse %q for %q", cmd, name)
 	}

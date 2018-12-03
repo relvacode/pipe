@@ -87,7 +87,7 @@ func Run(ctx context.Context, runnables []Runnable) RuntimeError {
 			//	errs <- errors.Errorf("%s", r)
 			//}()
 
-			err := e.Pipe.Go(ctx, s)
+			err := e.Pipe.Go(s.ctx, s)
 			if err != nil {
 				if s.f != nil {
 					logrus.Debugf("begin debug frame dump of %s", s)

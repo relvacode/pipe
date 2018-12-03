@@ -12,22 +12,24 @@ import (
 
 func init() {
 	pipe.Define(pipe.Pkg{
-		Name: "http.request",
+		Name: "http",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &HTTPServerPipe{
-				address: console.Arg(0).Default("127.0.0.1:3002").String(),
+				address: console.Arg(0).Default("127.0.0.1:8080").String(),
 			}
 		},
 	})
 }
 
 type Request struct {
-	Method  string
-	URL     string
-	Path    string
-	Query   url.Values
-	Headers http.Header
-	Body    *bytes.Buffer
+	Method     string
+	RemoteAddr string
+	Host       string
+	URL        string
+	Path       string
+	Query      url.Values
+	Headers    http.Header
+	Body       *bytes.Buffer
 }
 
 func (r *Request) Read(b []byte) (int, error) {
@@ -42,12 +44,14 @@ func (p *HTTPServerPipe) handle(stream pipe.Stream) (chan error, http.HandlerFun
 	var err = make(chan error, 1)
 	return err, func(rw http.ResponseWriter, r *http.Request) {
 		req := &Request{
-			Method:  r.Method,
-			URL:     r.URL.String(),
-			Path:    r.URL.Path,
-			Query:   r.URL.Query(),
-			Headers: r.Header,
-			Body:    new(bytes.Buffer),
+			Method:     r.Method,
+			RemoteAddr: r.RemoteAddr,
+			Host:       r.Host,
+			URL:        r.URL.String(),
+			Path:       r.URL.Path,
+			Query:      r.URL.Query(),
+			Headers:    r.Header,
+			Body:       new(bytes.Buffer),
 		}
 		io.Copy(req.Body, r.Body)
 		r.Body.Close()
