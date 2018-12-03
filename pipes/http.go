@@ -29,11 +29,16 @@ type Request struct {
 	Path       string
 	Query      url.Values
 	Headers    http.Header
-	Body       *bytes.Buffer
+
+	body *bytes.Buffer
+}
+
+func (r *Request) String() string {
+	return r.body.String()
 }
 
 func (r *Request) Read(b []byte) (int, error) {
-	return r.Body.Read(b)
+	return r.body.Read(b)
 }
 
 type HTTPServerPipe struct {
@@ -51,9 +56,9 @@ func (p *HTTPServerPipe) handle(stream pipe.Stream) (chan error, http.HandlerFun
 			Path:       r.URL.Path,
 			Query:      r.URL.Query(),
 			Headers:    r.Header,
-			Body:       new(bytes.Buffer),
+			body:       new(bytes.Buffer),
 		}
-		io.Copy(req.Body, r.Body)
+		io.Copy(req.body, r.Body)
 		r.Body.Close()
 		e := stream.Write(req)
 		if e != nil {

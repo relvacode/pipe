@@ -84,8 +84,11 @@ func (p ExecPipe) execFrame(ctx context.Context, f *DataFrame, stream Stream) er
 		return err
 	}
 
+	r, _ := tap.Reader(f.Object)
+
 	cmd := exec.CommandContext(ctx, p.name, args...)
 	cmd.Env = os.Environ()
+	cmd.Stdin = r
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = pw
 
