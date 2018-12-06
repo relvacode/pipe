@@ -65,7 +65,7 @@ type URLPipe struct {
 
 func (p *URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
@@ -97,7 +97,7 @@ func (p *URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return err
 		}
 
-		err = stream.Write(&Response{
+		err = stream.Write(nil, &Response{
 			StatusCode: resp.StatusCode,
 			Headers:    resp.Header,
 			Body:       resp.Body,

@@ -71,7 +71,7 @@ func (p *BrowserPipe) indexHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (p *BrowserPipe) eventsHandler(rw http.ResponseWriter, r *http.Request) {
-	// Listen to the closing of the http connection via the CloseNotifier
+	// Listen to the closing Of the http connection via the CloseNotifier
 	notify := rw.(http.CloseNotifier).CloseNotify()
 	f := rw.(http.Flusher)
 
@@ -135,7 +135,7 @@ func (p *BrowserPipe) Go(ctx context.Context, stream pipe.Stream) error {
 
 	var buf = new(bytes.Buffer)
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}

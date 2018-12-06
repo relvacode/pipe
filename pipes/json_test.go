@@ -11,7 +11,7 @@ import (
 func TestJsonPipe(t *testing.T) {
 	var (
 		pipes = []pipe.Runnable{
-			{Pipe: pipe.FromFunc(JSONDecode)(nil)},
+			{Pipe: &JSONDecodePipe{}},
 		}
 		inputs = []interface{}{
 			bytes.NewReader([]byte(`{"a": 1, "b": 2}`)),

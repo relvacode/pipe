@@ -3,18 +3,25 @@ package pipe
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"io"
 	"sync/atomic"
 )
 
+var (
+	ErrIOCancelled = errors.New("IO cancelled")
+)
+
 type Stream interface {
-	// Read a frame from the stream
-	Read() (*DataFrame, error)
+	// Read a frame from the stream.
+	// You may supply a cancellation channel
+	Read(cancel <-chan struct{}) (*DataFrame, error)
+
 	// Write an object back to the stream.
 	// If a write happens after a read
 	// then all writes after that read contain the originally read object in the frame stack
-	Write(interface{}) error
+	Write(cancel <-chan struct{}, obj interface{}) error
 
 	// Copy this stream so that all subsequent writes use this data frame in the stack.
 	With(*DataFrame) Stream
@@ -73,7 +80,7 @@ func (s *stream) Down(n *stream) {
 	s.down = n
 }
 
-func (s *stream) Read() (*DataFrame, error) {
+func (s *stream) Read(cancel <-chan struct{}) (*DataFrame, error) {
 	select {
 	case x, ok := <-s.input:
 		if !ok {
@@ -85,15 +92,17 @@ func (s *stream) Read() (*DataFrame, error) {
 		return x, nil
 	case <-s.ctx.Done():
 		return nil, s.ctx.Err()
+	case <-cancel:
+		return nil, ErrIOCancelled
 	}
 }
 
-func (s *stream) Write(x interface{}) error {
+func (s *stream) Write(cancel <-chan struct{}, obj interface{}) error {
 	var f *DataFrame
 	if s.f == nil {
-		f = NewDataFrame(x, s.tag)
+		f = NewDataFrame(obj, s.tag)
 	} else {
-		f = s.f.Copy(x, s.tag)
+		f = s.f.Copy(obj, s.tag)
 	}
 	select {
 	case s.down.input <- f:
@@ -104,6 +113,8 @@ func (s *stream) Write(x interface{}) error {
 		return io.EOF
 	case <-s.ctx.Done():
 		return s.ctx.Err()
+	case <-cancel:
+		return ErrIOCancelled
 	}
 }
 

@@ -60,7 +60,7 @@ func (p *HTTPServerPipe) handle(stream pipe.Stream) (chan error, http.HandlerFun
 		}
 		io.Copy(req.body, r.Body)
 		r.Body.Close()
-		e := stream.Write(req)
+		e := stream.Write(nil, req)
 		if e != nil {
 			err <- e
 		}

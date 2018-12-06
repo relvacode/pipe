@@ -53,7 +53,9 @@ func (a *Option) init(ptr interface{}, f apply) {
 		if x.Kind() == reflect.Ptr {
 			x = x.Elem()
 		}
-		if x.Type() != a.fallback.Type() {
+		switch {
+		case x.Kind() == reflect.Interface:
+		case x.Type() != a.fallback.Type():
 			panic(errors.Errorf("invalid default type %s for argument type %s", a.fallback.Type(), x.Type()))
 		}
 	}
@@ -101,8 +103,8 @@ func (a *Option) Int() *int64 {
 }
 
 // Expression parses an expr expression
-func (a *Option) Expression() *expr.Node {
-	var n expr.Node
+func (a *Option) Expression() *Expression {
+	var n Expression
 	var ptr = &n
 	a.init(ptr, func(s string) error {
 		pn, err := expr.Parse(s)

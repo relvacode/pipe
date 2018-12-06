@@ -13,8 +13,7 @@ import (
 
 func init() {
 	pipe.Define(pipe.Pkg{
-		Name:        "nats",
-		Description: "Publish and subscribe messages to a NATS event channel",
+		Name: "nats",
 		Family: []pipe.Pkg{
 			{
 				Name: "subscribe",
@@ -90,7 +89,7 @@ func (p *NatsReceiverPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			copied := make([]byte, len(m.Data))
 			copy(copied, m.Data)
 
-			err = stream.Write(bytes.NewReader(copied))
+			err = stream.Write(nil, bytes.NewReader(copied))
 			if err != nil {
 				return err
 			}
@@ -112,7 +111,7 @@ func (p *NatsSenderPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	var buf bytes.Buffer
 
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}

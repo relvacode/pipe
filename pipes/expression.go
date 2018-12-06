@@ -2,7 +2,6 @@ package pipes
 
 import (
 	"context"
-	"github.com/antonmedv/expr"
 	"github.com/pkg/errors"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/console"
@@ -13,7 +12,7 @@ func init() {
 		Expr(
 			"select",
 			func(f *pipe.DataFrame, x interface{}, stream pipe.Stream) error {
-				return stream.Write(x)
+				return stream.Write(nil, x)
 			},
 		))
 
@@ -26,7 +25,7 @@ func init() {
 					return errors.Errorf("expected boolean but expression returned %T", x)
 				}
 				if b {
-					return stream.Write(f.Object)
+					return stream.Write(nil, f.Object)
 				}
 				return nil
 			},
@@ -53,13 +52,13 @@ func Expr(name string, f ExprEvalFunc) pipe.Pkg {
 
 // ExprPipe executes a JQ style query and evaluates the result.
 type ExprPipe struct {
-	e *expr.Node
+	e *console.Expression
 	f ExprEvalFunc
 }
 
 func (p *ExprPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}

@@ -13,7 +13,7 @@ type WTestPipe struct {
 
 func (p *WTestPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for i := 0; i < len(p.Objects); i++ {
-		err := stream.Write(p.Objects[i])
+		err := stream.Write(nil, p.Objects[i])
 		if err != nil {
 			return err
 		}
@@ -27,7 +27,7 @@ type RTestPipe struct {
 
 func (p *RTestPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}

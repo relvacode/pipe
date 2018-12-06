@@ -1,6 +1,7 @@
 package pipe
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/flosch/pongo2"
 	"io"
@@ -78,13 +79,31 @@ func (f *DataFrame) Copy(x interface{}, tag *Tag) *DataFrame {
 
 var _ io.WriterTo = (*DataFrame)(nil)
 
+// Writes the contents of this frame object to the given writer
 func (f *DataFrame) WriteTo(w io.Writer) (int64, error) {
 	switch o := f.Object.(type) {
 	case io.Reader:
 		return io.Copy(w, o)
+	case io.WriterTo:
+		return o.WriteTo(w)
 	default:
 		i, err := fmt.Fprint(w, o)
 		return int64(i), err
+	}
+}
+
+// Returns a string representation of this frame object
+func (f *DataFrame) AsString() (string, error) {
+	switch t := f.Object.(type) {
+	case string:
+		return t, nil
+	default:
+		var b bytes.Buffer
+		_, err := f.WriteTo(&b)
+		if err != nil {
+			return "", err
+		}
+		return b.String(), nil
 	}
 }
 

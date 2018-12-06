@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/relvacode/pipe"
+	"github.com/relvacode/pipe/console"
 	"github.com/relvacode/pipe/tap"
 	"io"
 )
@@ -15,20 +16,29 @@ func init() {
 		Name: "json",
 		Family: []pipe.Pkg{
 			{
-				Name:        "decode",
-				Constructor: pipe.FromFunc(JSONDecode),
+				Name: "decode",
+				Constructor: func(command *console.Command) pipe.Pipe {
+					return JSONDecodePipe{}
+				},
 			},
 			{
-				Name:        "encode",
-				Constructor: pipe.FromFunc(JSONEncode),
+				Name: "encode",
+				Constructor: func(command *console.Command) pipe.Pipe {
+					return &JSONEncodePipe{
+						what: command.Any().Default(console.DefaultExpression{}).Expression(),
+					}
+				},
 			},
 		},
 	})
 }
 
-func JSONDecode(_ context.Context, stream pipe.Stream) error {
+type JSONDecodePipe struct {
+}
+
+func (p JSONDecodePipe) Go(_ context.Context, stream pipe.Stream) error {
 	for {
-		v, err := stream.Read()
+		v, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
@@ -50,7 +60,7 @@ func JSONDecode(_ context.Context, stream pipe.Stream) error {
 				}
 				return err
 			}
-			err = stream.Write(x)
+			err = stream.Write(nil, x)
 			if err != nil {
 				tap.Close(r)
 				return err
@@ -62,20 +72,29 @@ func JSONDecode(_ context.Context, stream pipe.Stream) error {
 	}
 }
 
-func JSONEncode(_ context.Context, stream pipe.Stream) error {
+type JSONEncodePipe struct {
+	what *console.Expression
+}
+
+func (p JSONEncodePipe) Go(_ context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
+		if err != nil {
+			return err
+		}
+
+		v, err := (*p.what).Eval(f.Context())
 		if err != nil {
 			return err
 		}
 
 		var buf = new(bytes.Buffer)
-		err = json.NewEncoder(buf).Encode(f.Object)
+		err = json.NewEncoder(buf).Encode(v)
 		if err != nil {
 			return err
 		}
 
-		err = stream.Write(buf)
+		err = stream.Write(nil, buf)
 		if err != nil {
 			return err
 		}

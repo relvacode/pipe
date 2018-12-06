@@ -24,17 +24,17 @@ func init() {
 func SplitAt(substring string) func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	return func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
-		// Return nothing if at end of file and no data passed
+		// Return nothing if at end Of file and no data passed
 		if atEOF && len(data) == 0 {
 			return 0, nil, nil
 		}
 
-		// Find the index of the input of the separator substring
+		// Find the index Of the input Of the separator substring
 		if i := strings.Index(string(data), substring); i >= 0 {
 			return i + len(substring), data[0:i], nil
 		}
 
-		// If at end of file with data return the data
+		// If at end Of file with data return the data
 		if atEOF {
 			return len(data), data, nil
 		}
@@ -52,7 +52,7 @@ func (p *SplitPipe) splitStream(r io.Reader, stream pipe.Stream) error {
 	s := bufio.NewScanner(r)
 	s.Split(SplitAt(*p.Split))
 	for s.Scan() {
-		err := stream.Write(s.Text())
+		err := stream.Write(nil, s.Text())
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (p *SplitPipe) splitStream(r io.Reader, stream pipe.Stream) error {
 
 func (p *SplitPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		v, err := stream.Read()
+		v, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}

@@ -11,8 +11,7 @@ import (
 
 func init() {
 	pipe.Define(pipe.Pkg{
-		Name:        "csv",
-		Description: "Reads a CSV stream and outputs each row as a key-value mapping using the first row as the keys",
+		Name: "csv",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return CSVPipe{}
 		},
@@ -41,7 +40,7 @@ func (CSVPipe) readStream(r io.Reader, stream pipe.Stream) error {
 		for i, k := range headers {
 			row[k] = record[i]
 		}
-		err = stream.Write(row)
+		err = stream.Write(nil, row)
 		if err != nil {
 			return err
 		}
@@ -50,7 +49,7 @@ func (CSVPipe) readStream(r io.Reader, stream pipe.Stream) error {
 
 func (p CSVPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}

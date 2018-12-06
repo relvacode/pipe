@@ -45,7 +45,7 @@ type ChecksumPipe struct {
 
 func (p ChecksumPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
@@ -61,7 +61,7 @@ func (p ChecksumPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return err
 		}
 
-		err = stream.Write(fmt.Sprintf("%x", h.Sum(nil)))
+		err = stream.Write(nil, fmt.Sprintf("%x", h.Sum(nil)))
 		if err != nil {
 			return err
 		}

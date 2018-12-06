@@ -5,7 +5,6 @@ import (
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/console"
 	"reflect"
-	"time"
 )
 
 func init() {
@@ -31,24 +30,6 @@ func init() {
 			return FlattenPipe{}
 		},
 	})
-
-	pipe.Define(pipe.Pkg{
-		Name: "delay",
-		Constructor: func(console *console.Command) pipe.Pipe {
-			return DelayPipe{
-				Duration: console.Arg(0).Duration(),
-			}
-		},
-	})
-
-	pipe.Define(pipe.Pkg{
-		Name: "every",
-		Constructor: func(console *console.Command) pipe.Pipe {
-			return EveryPipe{
-				Duration: console.Arg(0).Duration(),
-			}
-		},
-	})
 }
 
 type SkipPipe struct {
@@ -57,7 +38,7 @@ type SkipPipe struct {
 
 func (p SkipPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for i := int64(0); ; i++ {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
@@ -65,7 +46,7 @@ func (p SkipPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			continue
 		}
 
-		err = stream.With(f).Write(f.Object)
+		err = stream.With(f).Write(nil, f.Object)
 		if err != nil {
 			return err
 		}
@@ -78,13 +59,13 @@ type LimitPipe struct {
 
 func (p LimitPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for i := int64(0); ; i++ {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
 
 		if i < *p.Limit {
-			err = stream.Write(f.Object)
+			err = stream.Write(nil, f.Object)
 			if err != nil {
 				return err
 			}
@@ -99,7 +80,7 @@ type FlattenPipe struct {
 
 func (FlattenPipe) each(v reflect.Value, stream pipe.Stream) error {
 	for i := 0; i < v.Len(); i++ {
-		err := stream.Write(v.Index(i).Interface())
+		err := stream.Write(nil, v.Index(i).Interface())
 		if err != nil {
 			return err
 		}
@@ -110,7 +91,7 @@ func (FlattenPipe) each(v reflect.Value, stream pipe.Stream) error {
 
 func (p FlattenPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
@@ -120,56 +101,11 @@ func (p FlattenPipe) Go(ctx context.Context, stream pipe.Stream) error {
 		case reflect.Slice, reflect.Array:
 			err = p.each(v, stream)
 		default:
-			err = stream.Write(f.Object)
+			err = stream.Write(nil, f.Object)
 		}
 
 		if err != nil {
 			return err
-		}
-	}
-}
-
-type DelayPipe struct {
-	Duration *time.Duration
-}
-
-func (p DelayPipe) Go(ctx context.Context, stream pipe.Stream) error {
-	for {
-		f, err := stream.Read()
-		if err != nil {
-			return err
-		}
-
-		t := time.After(*p.Duration)
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-t:
-			err = stream.Write(f.Object)
-			if err != nil {
-				return err
-			}
-		}
-	}
-}
-
-type EveryPipe struct {
-	Duration *time.Duration
-}
-
-func (p EveryPipe) Go(ctx context.Context, stream pipe.Stream) error {
-	ticker := time.NewTicker(*p.Duration)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case t := <-ticker.C:
-			err := stream.Write(t)
-			if err != nil {
-				return err
-			}
 		}
 	}
 }

@@ -15,7 +15,7 @@ func init() {
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &ReplacePipe{
 				What: console.Arg(0).Template(),
-				With: console.Arg(0).Template(),
+				With: console.Arg(1).Template(),
 			}
 		},
 	})
@@ -28,7 +28,7 @@ type ReplacePipe struct {
 
 func (p *ReplacePipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func (p *ReplacePipe) Go(ctx context.Context, stream pipe.Stream) error {
 		}
 
 		replacer := rewrite.New(r, []byte(wf), []byte(wd))
-		err = stream.Write(tap.ReadProxyCloser(replacer, r))
+		err = stream.Write(nil, tap.ReadProxyCloser(replacer, r))
 		if err != nil {
 			return err
 		}

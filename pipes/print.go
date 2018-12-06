@@ -24,7 +24,7 @@ type PrintPipe struct {
 
 func (p *PrintPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
@@ -34,7 +34,7 @@ func (p *PrintPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return err
 		}
 
-		err = stream.Write(v)
+		err = stream.Write(nil, v)
 		if err != nil {
 			return err
 		}

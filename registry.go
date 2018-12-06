@@ -31,9 +31,6 @@ func FromFunc(f Func) Builder {
 type Pkg struct {
 	// Name is the one-word name of this pipe or package.
 	Name string
-	// Description is a brief one-line description on the purpose of the pipe.
-	// Not used if a Constructor is not defined.
-	Description string
 	// Constructor is a function to build an instance of this pipe.
 	Constructor Builder
 	// Family is a list of additional sub-packages that belong to this package.

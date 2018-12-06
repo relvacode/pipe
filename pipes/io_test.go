@@ -24,7 +24,7 @@ func TestBufferPipe(t *testing.T) {
 	}
 
 	if len(res) != 1 {
-		t.Fatalf("Expected length of %d but got %d", 1, len(res))
+		t.Fatalf("Expected length Of %d but got %d", 1, len(res))
 	}
 
 	cmp, err := ioutil.ReadAll(res[0].Object.(io.Reader))

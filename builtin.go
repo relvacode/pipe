@@ -17,7 +17,7 @@ type StdinPipe struct {
 }
 
 func (StdinPipe) Go(ctx context.Context, stream Stream) error {
-	return stream.Write(os.Stdin)
+	return stream.Write(nil, os.Stdin)
 }
 
 // EchoPipe echos all output to stdout
@@ -27,7 +27,7 @@ type EchoPipe struct {
 
 func (p *EchoPipe) Go(ctx context.Context, stream Stream) error {
 	for i := 0; ; i++ {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
@@ -98,7 +98,7 @@ func (p ExecPipe) execFrame(ctx context.Context, f *DataFrame, stream Stream) er
 	}
 	defer pw.Close()
 
-	err = stream.Write(pr)
+	err = stream.Write(nil, pr)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (p ExecPipe) execFrame(ctx context.Context, f *DataFrame, stream Stream) er
 
 func (p *ExecPipe) Go(ctx context.Context, stream Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}

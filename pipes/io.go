@@ -12,8 +12,7 @@ import (
 
 func init() {
 	pipe.Define(pipe.Pkg{
-		Name:        "buffer",
-		Description: "Buffers a file-like object into memory",
+		Name: "buffer",
 		Constructor: func(command *console.Command) pipe.Pipe {
 			return BufferPipe{}
 		},
@@ -25,7 +24,7 @@ type BufferPipe struct {
 
 func (BufferPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
@@ -40,7 +39,7 @@ func (BufferPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return errors.Wrap(err, "copy buffer")
 		}
 
-		err = stream.Write(&b)
+		err = stream.Write(nil, &b)
 		if err != nil {
 			return err
 		}

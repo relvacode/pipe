@@ -10,7 +10,7 @@ type WFramePipe struct {
 }
 
 func (p *WFramePipe) Go(ctx context.Context, stream Stream) error {
-	return stream.With(p.Frame).Write(p.Frame.Object)
+	return stream.With(p.Frame).Write(nil, p.Frame.Object)
 }
 
 // WBufferPipe reads from its stream, buffering values until the stream is closed
@@ -22,7 +22,7 @@ type WBufferPipe struct {
 func (p *WBufferPipe) Go(ctx context.Context, stream Stream) error {
 	var values []interface{}
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err == io.EOF {
 			break
 		}
@@ -35,7 +35,7 @@ func (p *WBufferPipe) Go(ctx context.Context, stream Stream) error {
 		return nil
 	}
 
-	return p.To.Write(values)
+	return p.To.Write(nil, values)
 }
 
 type RCopyPipe struct {
@@ -44,12 +44,12 @@ type RCopyPipe struct {
 
 func (p *RCopyPipe) Go(ctx context.Context, stream Stream) error {
 	for {
-		f, err := p.From.Read()
+		f, err := p.From.Read(nil)
 		if err != nil {
 			return err
 		}
 
-		err = stream.With(f).Write(f.Object)
+		err = stream.With(f).Write(nil, f.Object)
 		if err != nil {
 			return err
 		}
@@ -62,12 +62,12 @@ type WCopyPipe struct {
 
 func (p *WCopyPipe) Go(ctx context.Context, stream Stream) error {
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
 
-		err = p.To.With(f).Write(f.Object)
+		err = p.To.With(f).Write(nil, f.Object)
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func (p ForkPipe) Go(ctx context.Context, stream Stream) error {
 	modules[len(modules)-1] = Runnable{Pipe: w}
 
 	for {
-		f, err := stream.Read()
+		f, err := stream.Read(nil)
 		if err != nil {
 			return err
 		}
