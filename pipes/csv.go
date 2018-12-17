@@ -60,7 +60,7 @@ func (p CSVPipe) Go(ctx context.Context, stream pipe.Stream) error {
 		}
 
 		err = p.readStream(r, stream)
-		tap.Close(r)
+		_ = tap.Close(r)
 		if err != nil {
 			return err
 		}

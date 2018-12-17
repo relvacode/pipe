@@ -1,4 +1,4 @@
-package pipes
+package wire
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 func TestJsonPipe(t *testing.T) {
 	var (
 		pipes = []pipe.Runnable{
-			{Pipe: &JSONDecodePipe{}},
+			{Pipe: &Pipe{Protocol: JSONProtocol{}}},
 		}
 		inputs = []interface{}{
 			bytes.NewReader([]byte(`{"a": 1, "b": 2}`)),

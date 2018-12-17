@@ -28,7 +28,7 @@ func TestGrokPipe(t *testing.T) {
 			t.Fatalf("Expected exactly one result")
 		}
 
-		r, ok := results[0].Object.(map[string]string)
+		r, ok := results[0].Object.(map[string]interface{})
 		if !ok {
 			t.Fatalf("Expected map[string]interface{} but got %T", results[0].Object)
 		}
