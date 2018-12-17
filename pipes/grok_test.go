@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/e2e"
+	"github.com/relvacode/pipe/tap"
 	"testing"
 )
 
 func TestGrokPipe(t *testing.T) {
 	t.Run("ping", func(t *testing.T) {
 		var (
-			pattern = `icmp_seq=%{INT:seq} ttl=%{INT:ttl} time=%{NUMBER:rtt}`
+			pattern = tap.Template(`icmp_seq=%{INT:seq} ttl=%{INT:ttl} time=%{NUMBER:rtt}`)
 			pipes   = []pipe.Runnable{
 				{Pipe: &GrokPipe{pattern: &pattern}},
 			}

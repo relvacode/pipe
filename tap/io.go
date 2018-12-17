@@ -3,15 +3,16 @@ package tap
 
 import (
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"io"
+	"mime"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 var (
-	// ErrNotFile is raised when a file object that does not point to a real file is accessed.
-	ErrNotFile = errors.New("not a file")
+	ErrDirectory = errors.New("cannot stream from a directory")
 )
 
 // Reader gets a reader interface from an input interface
@@ -29,10 +30,15 @@ type closer interface {
 	Close() error
 }
 
+// Close closes x if x satisfies a Close() interface
 func Close(x interface{}) error {
 	c, ok := x.(closer)
 	if ok {
-		return c.Close()
+		err := c.Close()
+		if err != nil {
+			logrus.Error(err)
+		}
+		return err
 	}
 	return nil
 }
@@ -43,7 +49,7 @@ type forcedCloser struct {
 }
 
 func (c *forcedCloser) Close() error {
-	Close(c.Reader)
+	_ = Close(c.Reader)
 	return Close(c.orig)
 }
 
@@ -55,31 +61,29 @@ func ReadProxyCloser(wrapped, original io.Reader) io.ReadCloser {
 	}
 }
 
+func OpenFileInfo(path string, i os.FileInfo) *File {
+	var f = &File{
+		Path:      path,
+		Name:      i.Name(),
+		Size:      i.Size(),
+		Mode:      i.Mode(),
+		Directory: i.IsDir(),
+	}
+	f.AbsPath, _ = filepath.Abs(path)
+	if !f.Directory {
+		f.Extension = filepath.Ext(path)
+		f.Mime = mime.TypeByExtension(f.Extension)
+	}
+	return f
+}
+
 // OpenFile opens a file ready for reading.
 func OpenFile(path string) (*File, error) {
 	i, err := os.Stat(path)
 	if err != nil {
 		return nil, err
 	}
-
-	var f *os.File
-	if !i.IsDir() {
-		f, err = os.Open(path)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	abs, _ := filepath.Abs(path)
-	return &File{
-		Path:      path,
-		AbsPath:   abs,
-		Name:      i.Name(),
-		Size:      i.Size(),
-		Mode:      i.Mode(),
-		Directory: i.IsDir(),
-		File:      f,
-	}, nil
+	return OpenFileInfo(path, i), nil
 }
 
 type File struct {
@@ -89,7 +93,10 @@ type File struct {
 	Size      int64
 	Mode      os.FileMode
 	Directory bool
-	File      *os.File
+	Extension string
+	Mime      string
+
+	f io.ReadCloser
 }
 
 func (f File) String() string {
@@ -97,15 +104,22 @@ func (f File) String() string {
 }
 
 func (f *File) Read(b []byte) (int, error) {
-	if f.File == nil {
-		return 0, ErrNotFile
+	if f.Directory {
+		return 0, ErrDirectory
 	}
-	return f.File.Read(b)
+	if f.f == nil {
+		var err error
+		f.f, err = os.Open(f.Path)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return f.f.Read(b)
 }
 
 func (f *File) Close() error {
-	if f.File == nil {
-		return ErrNotFile
+	if f.f == nil {
+		return nil
 	}
-	return f.File.Close()
+	return f.f.Close()
 }

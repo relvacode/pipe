@@ -50,7 +50,7 @@ func Main() error {
 	if err != nil {
 		return err
 	}
-	tap.Close(r)
+	_ = tap.Close(r)
 
 	var (
 		ctx = context.Background()

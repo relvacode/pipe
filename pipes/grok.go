@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/console"
+	"github.com/relvacode/pipe/tap"
 	"github.com/vjeantet/grok"
 )
 
@@ -12,14 +13,14 @@ func init() {
 		Name: "grok",
 		Constructor: func(console *console.Command) pipe.Pipe {
 			return &GrokPipe{
-				pattern: console.Any().String(),
+				pattern: console.Any().Template(),
 			}
 		},
 	})
 }
 
 type GrokPipe struct {
-	pattern *string
+	pattern *tap.Template
 }
 
 func (p GrokPipe) Go(ctx context.Context, stream pipe.Stream) error {
@@ -27,6 +28,7 @@ func (p GrokPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	if err != nil {
 		return err
 	}
+
 	for {
 		f, err := stream.Read(nil)
 		if err != nil {
@@ -38,7 +40,12 @@ func (p GrokPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			return err
 		}
 
-		values, err := g.Parse(*p.pattern, str)
+		pattern, err := (*p.pattern).Render(f.Context())
+		if err != nil {
+			return err
+		}
+
+		values, err := g.ParseTyped(pattern, str)
 		if err != nil {
 			return err
 		}

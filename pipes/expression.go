@@ -18,6 +18,21 @@ func init() {
 
 	pipe.Define(
 		Expr(
+			"test",
+			func(f *pipe.DataFrame, x interface{}, stream pipe.Stream) error {
+				b, ok := x.(bool)
+				if !ok {
+					return errors.Errorf("expected boolean but expression returned %T", x)
+				}
+				if !b {
+					return errors.New("test assertion failed")
+				}
+				return stream.Write(nil, f.Object)
+			},
+		))
+
+	pipe.Define(
+		Expr(
 			"if",
 			func(f *pipe.DataFrame, x interface{}, stream pipe.Stream) error {
 				b, ok := x.(bool)

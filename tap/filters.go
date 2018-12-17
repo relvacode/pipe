@@ -7,8 +7,8 @@ import (
 )
 
 func init() {
-	pongo2.RegisterFilter("mktemp", TempFileFilter)
-	pongo2.RegisterFilter("json", JSONFilter)
+	_ = pongo2.RegisterFilter("mktemp", TempFileFilter)
+	_ = pongo2.RegisterFilter("json", JSONFilter)
 }
 
 func TempFileFilter(in *pongo2.Value, _ *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
