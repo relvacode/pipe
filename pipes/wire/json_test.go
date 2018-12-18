@@ -2,7 +2,6 @@ package wire
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/e2e"
 	"testing"
