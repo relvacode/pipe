@@ -42,7 +42,20 @@ func (p *Options) Set(input string) error {
 			return errors.Wrapf(err, "arg %d", i)
 		}
 	}
-	return nil
+
+	// Visit all of the flags and ensure that all have been set.
+	// The flag library does not call set on options that have not been defined on the command line.
+	p.flag.VisitAll(func(f *flag.Flag) {
+		if err != nil {
+			return
+		}
+
+		o, ok := f.Value.(*flagOption)
+		if ok && !o.set {
+			err = o.Set("")
+		}
+	})
+	return err
 }
 
 func (p *Options) Option(name string) *Option {

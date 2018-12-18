@@ -53,7 +53,7 @@ func NewExecPkg(name string) Pkg {
 		Constructor: func(console *console.Command) Pipe {
 			return &ExecPipe{
 				name: name,
-				args: console.Any().Default(tap.Template("")).Template(),
+				args: console.Any().Default("").Template(),
 			}
 		},
 	}

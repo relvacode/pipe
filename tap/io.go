@@ -3,7 +3,6 @@ package tap
 
 import (
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"io"
 	"mime"
 	"os"
@@ -35,9 +34,7 @@ func Close(x interface{}) error {
 	c, ok := x.(closer)
 	if ok {
 		err := c.Close()
-		if err != nil {
-			logrus.Error(err)
-		}
+		LogError(err)
 		return err
 	}
 	return nil
@@ -49,7 +46,7 @@ type forcedCloser struct {
 }
 
 func (c *forcedCloser) Close() error {
-	_ = Close(c.Reader)
+	LogError(Close(c.Reader))
 	return Close(c.orig)
 }
 

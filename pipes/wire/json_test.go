@@ -19,7 +19,6 @@ func TestJsonPipe(t *testing.T) {
 	)
 	results, err := e2e.RunPipeTest(inputs, pipes)
 	if err != nil {
-		fmt.Printf("%#v", err)
 		t.Fatal(err)
 	}
 

@@ -2,9 +2,27 @@ package aggregate
 
 import (
 	"github.com/pkg/errors"
+	"github.com/relvacode/pipe"
+	"github.com/relvacode/pipe/console"
 	"reflect"
 	"strconv"
 )
+
+func init() {
+	pipe.Define(pipe.Pkg{
+		Name: "sum",
+		Constructor: func(command *console.Command) pipe.Pipe {
+			return NewAggregator(command, func() Aggregation {
+				return NewNumber(func(values []float64) (s float64) {
+					for _, n := range values {
+						s += n
+					}
+					return
+				})
+			})
+		},
+	})
+}
 
 func NewNumber(reduce func([]float64) float64) *Number {
 	return &Number{

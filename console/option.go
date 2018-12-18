@@ -14,55 +14,33 @@ type apply func(string) error
 
 // Options convert a string value provided by the user to pointer value described when a pipe is constructed.
 type Option struct {
-	ptr      reflect.Value
-	fallback reflect.Value
-	apply    apply
+	ptr   reflect.Value
+	def   *string
+	apply apply
+	set   bool
 }
 
 func (a *Option) Set(input string) error {
 	if !a.ptr.IsValid() || a.apply == nil {
 		panic(errors.New("set argument without declared values"))
 	}
-	if input != "" {
-		return a.apply(input)
+	if input == "" && a.def == nil {
+		return errors.New("required argument")
 	}
-
-	if !a.fallback.IsValid() {
-		return errors.New("value required")
+	if input == "" && a.def != nil {
+		input = *a.def
 	}
-	switch a.ptr.Kind() {
-	case reflect.Ptr:
-		a.ptr.Elem().Set(a.fallback)
-	case reflect.Map:
-		keys := a.fallback.MapKeys()
-		for _, k := range keys {
-			a.ptr.SetMapIndex(k, a.fallback.MapIndex(k))
-		}
-	default:
-		panic(errors.Errorf("Cannot set default on %T", a.ptr.Interface()))
-	}
-	return nil
+	a.set = true
+	return a.apply(input)
 }
 
 func (a *Option) init(ptr interface{}, f apply) {
 	a.ptr = reflect.ValueOf(ptr)
 	a.apply = f
-
-	if a.fallback.IsValid() {
-		var x = a.ptr
-		if x.Kind() == reflect.Ptr {
-			x = x.Elem()
-		}
-		switch {
-		case x.Kind() == reflect.Interface:
-		case x.Type() != a.fallback.Type():
-			panic(errors.Errorf("invalid default type %s for argument type %s", a.fallback.Type(), x.Type()))
-		}
-	}
 }
 
-func (a *Option) Default(v interface{}) *Option {
-	a.fallback = reflect.ValueOf(v)
+func (a *Option) Default(s string) *Option {
+	a.def = &s
 	return a
 }
 

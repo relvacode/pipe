@@ -16,20 +16,20 @@ type Aggregation interface {
 	Final() (interface{}, error)
 }
 
-func NewAggregator(command *console.Command, f func() Aggregation) *Aggregator {
-	return &Aggregator{
-		Of:   command.Any().Default(console.DefaultExpression{}).Expression(),
+func NewAggregator(command *console.Command, f func() Aggregation) *Pipe {
+	return &Pipe{
+		Of:   command.Any().Default("this").Expression(),
 		Init: f,
 	}
 }
 
-type Aggregator struct {
+type Pipe struct {
 	Of   *console.Expression
 	Init func() Aggregation
 }
 
-func (a Aggregator) Go(ctx context.Context, stream pipe.Stream) error {
-	var ag = a.Init()
+func (p Pipe) Go(ctx context.Context, stream pipe.Stream) error {
+	var ag = p.Init()
 each:
 	for {
 		f, err := stream.Read(nil)
@@ -37,7 +37,7 @@ each:
 		case io.EOF:
 			break each
 		case nil:
-			v, err := (*a.Of).Eval(f.Context())
+			v, err := (*p.Of).Eval(f.Context())
 			if err != nil {
 				return err
 			}
