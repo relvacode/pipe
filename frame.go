@@ -1,7 +1,6 @@
 package pipe
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/flosch/pongo2"
 	"io"
@@ -43,7 +42,7 @@ type DataFrame struct {
 }
 
 func (f *DataFrame) String() string {
-	return fmt.Sprintf("DataFrame(%s: %#v: %d refs)", f.Tag, f.Object, len(f.Stack))
+	return fmt.Sprintf("DataFrame(%s: %T: %d refs)", f.Tag, f.Object, len(f.Stack))
 }
 
 // AppendStack creates a copy of this DataFrame with additional stack context
@@ -89,21 +88,6 @@ func (f *DataFrame) WriteTo(w io.Writer) (int64, error) {
 	default:
 		i, err := fmt.Fprint(w, o)
 		return int64(i), err
-	}
-}
-
-// Returns a string representation of this frame object
-func (f *DataFrame) AsString() (string, error) {
-	switch t := f.Object.(type) {
-	case string:
-		return t, nil
-	default:
-		var b bytes.Buffer
-		_, err := f.WriteTo(&b)
-		if err != nil {
-			return "", err
-		}
-		return b.String(), nil
 	}
 }
 

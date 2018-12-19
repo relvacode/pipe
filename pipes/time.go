@@ -61,14 +61,13 @@ type TimeoutPipe struct {
 
 func (p TimeoutPipe) Go(ctx context.Context, stream pipe.Stream) error {
 	timeout, cancel := context.WithTimeout(context.Background(), *p.Duration)
-	defer cancel()
 
 	for {
 		f, err := stream.Read(timeout.Done())
+		cancel()
 		if err != nil {
 			return err
 		}
-		cancel()
 		err = stream.Write(nil, f.Object)
 		if err != nil {
 			return err

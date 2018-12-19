@@ -31,10 +31,6 @@ type Runnable struct {
 	Tag  *Tag
 }
 
-func (r Runnable) String() string {
-	return fmt.Sprintf("Pipe(%T: %s)", r.Pipe, r.Tag)
-}
-
 func RunIO(ctx context.Context, input Pipe, modules []Runnable, output Pipe) RuntimeError {
 	pipes := make([]Runnable, len(modules)+2)
 	copy(pipes[1:], modules)
@@ -71,30 +67,16 @@ func Run(ctx context.Context, runnables []Runnable) RuntimeError {
 	var errs = make(chan error, len(runnables))
 
 	for i := 0; i < len(runnables); i++ {
-		logrus.Debugf("starting module %s %#v", runnables[i], runnables[i].Pipe)
 		go func(s *stream, e Runnable) {
 			defer func() {
-				logrus.Debugf("module %T stopped", e)
+				logrus.Debugf("pipe %T stopped", e.Pipe)
 			}()
 			defer s.Close()
 
-			//// Panic recovery
-			//defer func() {
-			//	r := recover()
-			//	if r == nil {
-			//		return
-			//	}
-			//	errs <- errors.Errorf("%s", r)
-			//}()
-
+			logrus.Debugf("pipe %T started on stream %s", e.Pipe, s)
 			err := e.Pipe.Go(s.ctx, s)
 			if err != nil {
-				if s.f != nil {
-					logrus.Debugf("begin debug frame dump of %s", s)
-					logrus.Debugf("%#v", *s.f)
-				}
-				err = errors.Wrapf(err, "%s for"+
-					" %s", s, e)
+				err = errors.Wrapf(err, "%T on %s", e.Pipe, s)
 			}
 			errs <- err
 

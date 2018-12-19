@@ -88,7 +88,6 @@ func (s *stream) Read(cancel <-chan struct{}) (*DataFrame, error) {
 		}
 		s.f = x
 		s.r++
-		logrus.Debugf("%s read %s (%d)", s, s.f, s.r)
 		return x, nil
 	case <-s.ctx.Done():
 		return nil, s.ctx.Err()
@@ -107,7 +106,6 @@ func (s *stream) Write(cancel <-chan struct{}, obj interface{}) error {
 	select {
 	case s.down.input <- f:
 		s.w++
-		logrus.Debugf("%s write %s (%d)", s, f, s.w)
 		return nil
 	case <-s.ok:
 		return io.EOF

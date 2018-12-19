@@ -60,6 +60,7 @@ func (a *Arg) String() string {
 }
 
 func (a *Arg) Read(b bufrr.RunePeeker) error {
+	var lr rune
 	for {
 		r, _, err := b.PeekRune()
 		if err != nil {
@@ -71,14 +72,14 @@ func (a *Arg) Read(b bufrr.RunePeeker) error {
 			return io.EOF
 		case IsNextPipe(b):
 			return EOP
-		case IsStartTag(b):
+		case (a.b.Len() == 0 || unicode.IsSpace(lr)) && IsStartTag(b):
 			return a.t.Read(b)
 		case a.b.Len() == 0 && unicode.IsSpace(r):
 		default:
 			a.b.WriteRune(r)
 		}
 
-		b.ReadRune()
+		lr, _, _ = b.ReadRune()
 	}
 }
 
