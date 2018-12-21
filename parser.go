@@ -41,7 +41,7 @@ func Make(name string, cmd string, from registry) (Pipe, error) {
 	}
 
 	var (
-		c = console.NewCommand(name)
+		c = console.NewCommand()
 		p = pkg.Constructor(c)
 	)
 
@@ -71,4 +71,11 @@ func Parse(r io.Reader, reg registry) ([]Runnable, error) {
 	}
 
 	return rn, nil
+}
+
+// Returns the help text for a pipe builder
+func Help(pipe Pkg) string {
+	cmd := console.NewCommand()
+	pipe.Constructor(cmd)
+	return fmt.Sprintf("%s\t%s", pipe.Name, cmd.Usage())
 }

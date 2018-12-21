@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"github.com/pkg/errors"
 	"github.com/relvacode/pipe"
 	"github.com/relvacode/pipe/profile"
 	"github.com/sirupsen/logrus"
@@ -19,6 +21,9 @@ var Rev string = "localbuild"
 var (
 	flagDebug = flag.Bool("debug", false, "Enable debug logging")
 	flagNoRc  = flag.Bool("norc", false, "Disable profile")
+
+	flagLibrary = flag.Bool("lib", false, "Get usage for all native modules then quit")
+	flagPackage = flag.String("pkg", "", "Get usage for a specific package then quit")
 )
 
 func Main() error {
@@ -32,6 +37,22 @@ func Main() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if *flagPackage != "" {
+		pkg, ok := pipe.Lib[*flagPackage]
+		if !ok {
+			return errors.Errorf("help: no such package %q", *flagPackage)
+		}
+		fmt.Println(pipe.Help(pkg))
+		os.Exit(0)
+	}
+
+	if *flagLibrary {
+		for _, pkg := range pipe.Lib.Sorted() {
+			fmt.Println(pipe.Help(pkg))
+		}
+		os.Exit(0)
 	}
 
 	defer func() {

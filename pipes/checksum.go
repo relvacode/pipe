@@ -22,19 +22,15 @@ var allHashGenerators = map[string]hashGenerator{
 }
 
 func init() {
-	pkg := pipe.Pkg{
-		Name: "checksum",
-	}
 	for k := range allHashGenerators {
 		g := allHashGenerators[k]
-		pkg.Family = append(pkg.Family, pipe.Pkg{
-			Name: k,
+		pipe.Define(pipe.Pkg{
+			Name: pipe.Family("checksum", k),
 			Constructor: func(command *console.Command) pipe.Pipe {
 				return &ChecksumPipe{g: g}
 			},
 		})
 	}
-	pipe.Define(pkg)
 }
 
 type hashGenerator func() hash.Hash

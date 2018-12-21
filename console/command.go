@@ -1,54 +1,117 @@
 package console
 
-import "github.com/google/shlex"
+import (
+	"flag"
+	"fmt"
+	"github.com/google/shlex"
+	"github.com/pkg/errors"
+	"strings"
+)
 
-func NewCommand(name string) *Command {
+type Usage interface {
+	Usage() string
+}
+
+type flagOption struct {
+	*Option
+}
+
+func (flagOption) String() string {
+	return ""
+}
+
+func NewCommand() *Command {
 	return &Command{
-		name:    name,
-		Options: NewOptions(name),
+		flag: flag.NewFlagSet("", flag.ContinueOnError),
 	}
 }
 
 // Command is given to a pipe to easily define input arguments to the pipe
 type Command struct {
-	name  string
-	apply apply
-	*Options
+	o    *Option
+	flag *flag.FlagSet
+	args []*Option
 }
 
-func (c *Command) Name() string {
-	return c.name
+// Usage returns the usage for this command.
+func (c *Command) Usage() string {
+	if c.o != nil {
+		return c.o.Usage()
+	}
+	var args []string
+	c.flag.VisitAll(func(f *flag.Flag) {
+		args = append(args, fmt.Sprintf("-%s %s", f.Name, f.Value.(*flagOption).Usage()))
+	})
+	for _, o := range c.args {
+		args = append(args, o.Usage())
+	}
+
+	return strings.Join(args, " ")
 }
 
 // Set parses and sets all of pointer values of described arguments
 func (c *Command) Set(input string) error {
-	if c.apply != nil {
-		return c.apply(input)
+	if c.o != nil {
+		return c.o.Set(input)
 	}
-	return c.Options.Set(input)
+
+	args, err := shlex.Split(input)
+	if err != nil {
+		return err
+	}
+	err = c.flag.Parse(args)
+	if err != nil {
+		return err
+	}
+
+	for i, a := range c.args {
+		err = a.Set(c.flag.Arg(i))
+		if err != nil {
+			return errors.Wrapf(err, "arg %d", i)
+		}
+	}
+
+	// Visit all of the flags and ensure that all have been set.
+	// The flag library does not call set on options that have not been defined on the command line.
+	c.flag.VisitAll(func(f *flag.Flag) {
+		if err != nil {
+			return
+		}
+
+		o, ok := f.Value.(*flagOption)
+		if ok && !o.set {
+			err = o.Set("")
+		}
+	})
+	return err
 }
 
-// Split splits the command into basic strings using a shell-style parser
-func (c *Command) Split() *[]string {
-	var parts []string
-	var ptr = &parts
-	c.apply = func(input string) error {
-		p, err := shlex.Split(input)
-		if err != nil {
-			return err
-		}
-
-		for _, s := range p {
-			*ptr = append(*ptr, s)
-		}
-		return nil
+func (c *Command) checkAnySet() {
+	if c.o != nil {
+		panic(errors.New("cannot call Any() more than once"))
 	}
-	return ptr
+}
+
+func (c *Command) Option(name string) *Option {
+	c.checkAnySet()
+	var o = new(Option)
+	c.flag.Var(&flagOption{o}, name, "")
+	return o
+}
+
+func (c *Command) Arg(n int) *Option {
+	c.checkAnySet()
+	if n != len(c.args) {
+		panic(errors.Errorf("cannot call Arg(%d) out of order", n))
+	}
+	o := new(Option)
+	c.args = append(c.args, o)
+	return o
 }
 
 // Any returns an Option that accepts any input (or none)
 func (c *Command) Any() *Option {
-	var o = new(Option)
-	c.apply = o.Set
-	return o
+	c.checkAnySet()
+	c.o = new(Option)
+	return c.o
 }

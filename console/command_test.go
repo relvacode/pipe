@@ -4,7 +4,7 @@ import "testing"
 
 func TestOptions_Set(t *testing.T) {
 	w := "123"
-	o := NewOptions("test")
+	o := NewCommand()
 	a := o.Option("ab").Default(w).String()
 	err := o.Set("")
 	if err != nil {

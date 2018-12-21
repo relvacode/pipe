@@ -1,6 +1,7 @@
 package console
 
 import (
+	"fmt"
 	"github.com/antonmedv/expr"
 	"github.com/pkg/errors"
 	"github.com/relvacode/pipe/tap"
@@ -17,48 +18,67 @@ type Option struct {
 	ptr   reflect.Value
 	def   *string
 	apply apply
+	usage string
 	set   bool
 }
 
-func (a *Option) Set(input string) error {
-	if !a.ptr.IsValid() || a.apply == nil {
+func (o *Option) Set(input string) error {
+	if !o.ptr.IsValid() || o.apply == nil {
 		panic(errors.New("set argument without declared values"))
 	}
-	if input == "" && a.def == nil {
+	if input == "" && o.def == nil {
 		return errors.New("required argument")
 	}
-	if input == "" && a.def != nil {
-		input = *a.def
+	if input == "" && o.def != nil {
+		input = *o.def
 	}
-	a.set = true
-	return a.apply(input)
+	o.set = true
+	return o.apply(input)
 }
 
-func (a *Option) init(ptr interface{}, f apply) {
-	a.ptr = reflect.ValueOf(ptr)
-	a.apply = f
+func (o *Option) Usage() string {
+	var s strings.Builder
+	if o.def != nil {
+		s.WriteString("[")
+	}
+	s.WriteString("<")
+	s.WriteString(o.usage)
+	if o.def != nil {
+		fmt.Fprintf(&s, "=%q", *o.def)
+	}
+	s.WriteString(">")
+	if o.def != nil {
+		s.WriteString("]")
+	}
+	return s.String()
 }
 
-func (a *Option) Default(s string) *Option {
-	a.def = &s
-	return a
+func (o *Option) init(ptr interface{}, t string, f apply) {
+	o.ptr = reflect.ValueOf(ptr)
+	o.usage = t
+	o.apply = f
+}
+
+func (o *Option) Default(s string) *Option {
+	o.def = &s
+	return o
 }
 
 // String is a optional string
-func (a *Option) String() *string {
+func (o *Option) String() *string {
 	var value string
 	var ptr = &value
-	a.init(ptr, func(s string) error {
+	o.init(ptr, "string", func(s string) error {
 		*ptr = s
 		return nil
 	})
 	return ptr
 }
 
-func (a *Option) Template() *tap.Template {
+func (o *Option) Template() *tap.Template {
 	var t tap.Template
 	var ptr = &t
-	a.init(ptr, func(s string) error {
+	o.init(ptr, "template", func(s string) error {
 		*ptr = tap.Template(s)
 		return nil
 	})
@@ -66,10 +86,10 @@ func (a *Option) Template() *tap.Template {
 }
 
 // Int parses as an 64 bit integer
-func (a *Option) Int() *int64 {
+func (o *Option) Int() *int64 {
 	var value int64
 	var ptr = &value
-	a.init(ptr, func(s string) error {
+	o.init(ptr, "int", func(s string) error {
 		var err error
 		*ptr, err = strconv.ParseInt(s, 10, 64)
 		if err != nil {
@@ -81,10 +101,10 @@ func (a *Option) Int() *int64 {
 }
 
 // Expression parses an expr expression
-func (a *Option) Expression() *Expression {
+func (o *Option) Expression() *Expression {
 	var n Expression
 	var ptr = &n
-	a.init(ptr, func(s string) error {
+	o.init(ptr, "expression", func(s string) error {
 		pn, err := expr.Parse(s)
 		if err != nil {
 			return err
@@ -96,10 +116,10 @@ func (a *Option) Expression() *Expression {
 }
 
 // Duration parses a duration
-func (a *Option) Duration() *time.Duration {
+func (o *Option) Duration() *time.Duration {
 	var d time.Duration
 	var ptr = &d
-	a.init(ptr, func(s string) error {
+	o.init(ptr, "duration", func(s string) error {
 		pd, err := time.ParseDuration(s)
 		if err != nil {
 			return err
@@ -110,9 +130,9 @@ func (a *Option) Duration() *time.Duration {
 	return ptr
 }
 
-func (a *Option) Map() map[string]string {
+func (o *Option) Map() map[string]string {
 	var ptr = make(map[string]string)
-	a.init(ptr, func(s string) error {
+	o.init(ptr, "key:value", func(s string) error {
 		parts := strings.Split(s, ":")
 		if len(parts) < 2 {
 			return errors.Errorf("expected key:value in %q", s)

@@ -1,30 +1,21 @@
 package pipe
 
 import (
-	"context"
+	"github.com/pkg/errors"
 	"github.com/relvacode/pipe/console"
+	"sort"
 	"strings"
 )
 
-// A Builder constructs an instance of the module
+// A InitFn constructs an instance of the module
 // using the supplied arguments including how the module was called as the first argument.
-type Builder func(*console.Command) Pipe
+type InitFn func(*console.Command) Pipe
 
-var _ Pipe = (Func)(nil)
-
-// Func is a pipe implemented as a stateless function.
-// Useful for creating simple pipes using FromFunc.
-type Func func(context.Context, Stream) error
-
-func (p Func) Go(ctx context.Context, stream Stream) error {
-	return p(ctx, stream)
-}
-
-// Create an instance of a Pipe from a pipe function
-func FromFunc(f Func) Builder {
-	return func(*console.Command) Pipe {
-		return f
+func Family(names ...string) string {
+	if len(names) == 0 {
+		panic(errors.New("need at least one name in package family"))
 	}
+	return strings.Join(names, ".")
 }
 
 // A Pkg describes a package - a pipe and/or a family of pipes.
@@ -32,25 +23,30 @@ type Pkg struct {
 	// Name is the one-word name of this pipe or package.
 	Name string
 	// Constructor is a function to build an instance of this pipe.
-	Constructor Builder
-	// Family is a list of additional sub-packages that belong to this package.
-	// The final pipe name is the entire family tree joined with `.`
-	Family []Pkg
+	Constructor InitFn
 }
 
 type registry map[string]Pkg
 
-var Lib = make(registry)
-
-func define(m Pkg, family []string) {
-	if m.Constructor != nil {
-		Lib[strings.Join(family, ".")] = m
+// Sorted returns a sorted list of all install packages
+func (r registry) Sorted() []Pkg {
+	var keys = make([]string, len(r))
+	var i int
+	for k := range r {
+		keys[i] = k
+		i++
 	}
-	for _, f := range m.Family {
-		define(f, append(family, strings.ToLower(f.Name)))
+	sort.Strings(keys)
+	var sorted = make([]Pkg, len(keys))
+	for i, k := range keys {
+		sorted[i] = r[k]
 	}
+	return sorted
 }
 
-func Define(m Pkg) {
-	define(m, []string{strings.ToLower(m.Name)})
+var Lib = make(registry)
+
+// Define registers the given package with the global library
+func Define(pkg Pkg) {
+	Lib[pkg.Name] = pkg
 }

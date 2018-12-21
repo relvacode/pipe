@@ -13,28 +13,23 @@ import (
 
 func init() {
 	pipe.Define(pipe.Pkg{
-		Name: "nats",
-		Family: []pipe.Pkg{
-			{
-				Name: "subscribe",
-				Constructor: func(console *console.Command) pipe.Pipe {
-					return &NatsReceiverPipe{
-						NatsClient{
-							url: console.Arg(0).String(),
-						},
-					}
+		Name: pipe.Family("nats", "subscribe"),
+		Constructor: func(console *console.Command) pipe.Pipe {
+			return &NatsReceiverPipe{
+				NatsClient{
+					url: console.Arg(0).String(),
 				},
-			},
-			{
-				Name: "publish",
-				Constructor: func(console *console.Command) pipe.Pipe {
-					return &NatsSenderPipe{
-						NatsClient{
-							url: console.Arg(0).String(),
-						},
-					}
+			}
+		},
+	})
+	pipe.Define(pipe.Pkg{
+		Name: pipe.Family("nats", "publish"),
+		Constructor: func(console *console.Command) pipe.Pipe {
+			return &NatsSenderPipe{
+				NatsClient{
+					url: console.Arg(0).String(),
 				},
-			},
+			}
 		},
 	})
 }

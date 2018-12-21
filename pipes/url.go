@@ -21,13 +21,9 @@ var methods = []string{
 }
 
 func init() {
-	pkg := pipe.Pkg{
-		Name: "url",
-	}
-	for i := 0; i < len(methods); i++ {
-		method := methods[i]
-		pkg.Family = append(pkg.Family, pipe.Pkg{
-			Name: strings.ToLower(method),
+	for _, method := range methods {
+		pipe.Define(pipe.Pkg{
+			Name: pipe.Family("url", strings.ToLower(method)),
 			Constructor: func(console *console.Command) pipe.Pipe {
 				return &URLPipe{
 					method:  method,
@@ -37,7 +33,6 @@ func init() {
 			},
 		})
 	}
-	pipe.Define(pkg)
 }
 
 var _ io.ReadCloser = (*Response)(nil)

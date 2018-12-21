@@ -56,6 +56,20 @@ Use the `if` pipe to filter by expression using [Expr](https://github.com/antonm
 pipe 'open *.json :: if this.Size > 0 :: json'
 ```
 
+## Help
+
+All native pipes can be listed with
+
+```
+pipe -lib
+```
+
+Find out about a specific pipe using
+
+```
+pipe -pkg <name>
+```
+
 ## Advanced
 
 ### Templating
@@ -65,7 +79,7 @@ pipe 'open *.json :: if this.Size > 0 :: json'
 Use `mktemp`  filter to create a temporary file containing the value's contents.
 
 ```bash
-pipe 'url.get https://example.org as request :: openssl md5 {request | mktemp}'
+pipe 'url.get https://example.org as request :: openssl md5 {{request | mktemp}}'
 ```
 
 
