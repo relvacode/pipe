@@ -36,6 +36,7 @@ func NewDataFrame(x interface{}, tag *Tag) *DataFrame {
 type DataFrame struct {
 	Tag    *Tag
 	Object interface{}
+	Index  uint64
 	Stack  Stack
 
 	context pongo2.Context // cached context
@@ -99,9 +100,10 @@ func (f *DataFrame) Context() pongo2.Context {
 	for k, v := range f.Stack {
 		f.context[k] = v
 	}
-	f.context["this"] = f.Object
 	if f.Tag != nil {
 		f.context[string(*f.Tag)] = f.Object
 	}
+	f.context["this"] = f.Object
+	f.context["_index"] = f.Index
 	return f.context
 }

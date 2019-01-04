@@ -49,7 +49,7 @@ type stream struct {
 	ctx  context.Context
 	tag  *Tag
 	f    *DataFrame
-	r, w int
+	r, w uint64
 
 	input chan *DataFrame
 	ok    chan struct{} // closed when downstream is closed
@@ -103,6 +103,7 @@ func (s *stream) Write(cancel <-chan struct{}, obj interface{}) error {
 	} else {
 		f = s.f.Copy(obj, s.tag)
 	}
+	f.Index = s.w
 	select {
 	case s.down.input <- f:
 		s.w++

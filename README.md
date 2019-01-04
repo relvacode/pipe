@@ -10,30 +10,23 @@ Run a series of native or system commands concurrently and manipulate streams us
 brew install relvacode/pipe/pipe
 ```
 
-```
-go install github.com/relvacode/pipe/cmd/pipe
-```
+### Basics
 
-
-## Basics
-
-### Pipes
-
-A pipe can either be a built-in native pipe, or fallback to a program on the system.
-
-To join the output of one pipe to the input of the next use `::`.
+A pipe takes input objects and produces zero or more output objects. Join pipes together using `::`.
 
 The first pipe in the series is given a `stdin` object and all outputs of the last pipe are echoed to `stdout`.
 
-### Context and Tagging
+If the name of a pipe isn't found in the built-in library then that program is executed on the system
 
-With each object passed to a pipe a context is given which traces the history of that object and its parents when tagged.
+#### Context and Tagging
 
-Use `as <name>` to tag each value produced by that pipe and refer to it in a later pipe.
 
-`this` always refers to the current object.
+Use `as <name>` to tag each value produced by that pipe to refer to it in a later pipe.
 
-### Templating
+  - `this` is the current object
+  - `_index` is the index of the object in the pipe that produced it.
+
+#### Templating
 
 Use Django style templates provided by [Pongo2](https://github.com/flosch/pongo2) in pipe arguments
 
@@ -47,7 +40,7 @@ Use `.String` on most objects to get a more human readable representation of an 
 pipe 'open * :: print {{this.Mode.String}}'
 ```
 
-### Filtering
+#### Filtering
 
 Use the `if` pipe to filter by expression using [Expr](https://github.com/antonmedv/expr)
 
@@ -56,7 +49,7 @@ Use the `if` pipe to filter by expression using [Expr](https://github.com/antonm
 pipe 'open *.json :: if this.Size > 0 :: json'
 ```
 
-## Help
+#### Help
 
 All native pipes can be listed with
 
@@ -70,11 +63,11 @@ Find out about a specific pipe using
 pipe -pkg <name>
 ```
 
-## Advanced
+### Advanced
 
-### Templating
+#### Templating
 
-#### Create a temporary file
+##### Create a temporary file
 
 Use `mktemp`  filter to create a temporary file containing the value's contents.
 
@@ -83,7 +76,7 @@ pipe 'url.get https://example.org as request :: openssl md5 {{request | mktemp}}
 ```
 
 
-## Examples
+### Examples
 
 Get a new stock quote every 30 seconds
 
