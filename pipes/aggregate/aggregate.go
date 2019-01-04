@@ -18,7 +18,7 @@ type Aggregation interface {
 
 func NewAggregator(command *console.Command, f func() Aggregation) *Pipe {
 	return &Pipe{
-		Of:   command.Any().Default("this").Expression(),
+		Of:   command.Any().Expression(),
 		Init: f,
 	}
 }

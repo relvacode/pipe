@@ -67,22 +67,9 @@ func (c *Command) Set(input string) error {
 	for i, a := range c.args {
 		err = a.Set(c.flag.Arg(i))
 		if err != nil {
-			return errors.Wrapf(err, "arg %d", i)
+			return err
 		}
 	}
-
-	// Visit all of the flags and ensure that all have been set.
-	// The flag library does not call set on options that have not been defined on the command line.
-	c.flag.VisitAll(func(f *flag.Flag) {
-		if err != nil {
-			return
-		}
-
-		o, ok := f.Value.(*flagOption)
-		if ok && !o.set {
-			err = o.Set("")
-		}
-	})
 	return err
 }
 
@@ -94,7 +81,9 @@ func (c *Command) checkAnySet() {
 
 func (c *Command) Option(name string) *Option {
 	c.checkAnySet()
-	var o = new(Option)
+	var o = &Option{
+		name: name,
+	}
 	c.flag.Var(&flagOption{o}, name, "")
 	return o
 }
@@ -104,7 +93,9 @@ func (c *Command) Arg(n int) *Option {
 	if n != len(c.args) {
 		panic(errors.Errorf("cannot call Arg(%d) out of order", n))
 	}
-	o := new(Option)
+	o := &Option{
+		name: fmt.Sprint(n),
+	}
 	c.args = append(c.args, o)
 	return o
 }

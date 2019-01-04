@@ -5,72 +5,113 @@ import (
 	"github.com/antonmedv/expr"
 	"github.com/pkg/errors"
 	"github.com/relvacode/pipe/tap"
+	"github.com/sirupsen/logrus"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type apply func(string) error
+// oType wraps logic around a value (usually a pointer) to defer parsing of that value from an input string.
+type oType struct {
+	// Name of the type as displayed to a human
+	Name string
+	// Parse sets the value from an input string
+	Parse func(input string) error
+	// SetDefault sets the value using a native Go value
+	SetDefault func(value reflect.Value)
+}
 
 // Options convert a string value provided by the user to pointer value described when a pipe is constructed.
 type Option struct {
-	ptr   reflect.Value
-	def   *string
-	apply apply
-	usage string
-	set   bool
+	name         string
+	optionType   *oType
+	defaultValue *reflect.Value
 }
 
 func (o *Option) Set(input string) error {
-	if !o.ptr.IsValid() || o.apply == nil {
-		panic(errors.New("set argument without declared values"))
+	if input == "" {
+		if o.defaultValue == nil {
+			return errors.Errorf("option %v: missing required argument (%s not provided)", o.name, o.optionType.Name)
+		}
+		return nil
 	}
-	if input == "" && o.def == nil {
-		return errors.New("required argument")
-	}
-	if input == "" && o.def != nil {
-		input = *o.def
-	}
-	o.set = true
-	return o.apply(input)
+	return o.optionType.Parse(input)
 }
 
 func (o *Option) Usage() string {
 	var s strings.Builder
-	if o.def != nil {
+	if o.defaultValue != nil {
 		s.WriteString("[")
 	}
 	s.WriteString("<")
-	s.WriteString(o.usage)
-	if o.def != nil {
-		fmt.Fprintf(&s, "=%q", *o.def)
+	_, _ = fmt.Fprint(&s, o.optionType.Name)
+	if o.defaultValue != nil && o.defaultValue.IsValid() {
+		_, _ = fmt.Fprintf(&s, "=%q", fmt.Sprint(o.defaultValue.Interface()))
 	}
 	s.WriteString(">")
-	if o.def != nil {
+	if o.defaultValue != nil {
 		s.WriteString("]")
 	}
 	return s.String()
 }
 
-func (o *Option) init(ptr interface{}, t string, f apply) {
-	o.ptr = reflect.ValueOf(ptr)
-	o.usage = t
-	o.apply = f
+func (o *Option) assign(t oType) {
+	o.optionType = &t
+	if o.defaultValue != nil {
+		defer func() {
+			if r := recover(); r != nil {
+				logrus.Errorf("invalid default (%T %v) caused panic on option %s", o.defaultValue.Interface(), o.defaultValue.Interface(), o.name)
+				panic(r)
+			}
+		}()
+
+		o.optionType.SetDefault(*o.defaultValue)
+	}
 }
 
-func (o *Option) Default(s string) *Option {
-	o.def = &s
+// Default sets a default value on this option if the input value is empty.
+// This is usually the non-pointer form of the option's pointer value or a map for a map type.
+func (o *Option) Default(value interface{}) *Option {
+	v := reflect.ValueOf(value)
+	o.defaultValue = &v
 	return o
 }
 
-// String is a optional string
 func (o *Option) String() *string {
 	var value string
 	var ptr = &value
-	o.init(ptr, "string", func(s string) error {
-		*ptr = s
-		return nil
+
+	o.assign(oType{
+		Name: "string",
+		Parse: func(input string) error {
+			*ptr = input
+			return nil
+		},
+		SetDefault: func(value reflect.Value) {
+			*ptr = value.String()
+		},
+	})
+	return ptr
+}
+
+func (o *Option) Bool() *bool {
+	var value bool
+	var ptr = &value
+
+	o.assign(oType{
+		Name: "bool",
+		Parse: func(input string) error {
+			b, err := strconv.ParseBool(input)
+			if err != nil {
+				return err
+			}
+			*ptr = b
+			return nil
+		},
+		SetDefault: func(value reflect.Value) {
+			*ptr = value.Bool()
+		},
 	})
 	return ptr
 }
@@ -78,9 +119,16 @@ func (o *Option) String() *string {
 func (o *Option) Template() *tap.Template {
 	var t tap.Template
 	var ptr = &t
-	o.init(ptr, "template", func(s string) error {
-		*ptr = tap.Template(s)
-		return nil
+
+	o.assign(oType{
+		Name: "template",
+		Parse: func(input string) error {
+			*ptr = tap.Template(input)
+			return nil
+		},
+		SetDefault: func(value reflect.Value) {
+			*ptr = tap.Template(value.String())
+		},
 	})
 	return ptr
 }
@@ -89,28 +137,43 @@ func (o *Option) Template() *tap.Template {
 func (o *Option) Int() *int64 {
 	var value int64
 	var ptr = &value
-	o.init(ptr, "int", func(s string) error {
-		var err error
-		*ptr, err = strconv.ParseInt(s, 10, 64)
-		if err != nil {
-			return err
-		}
-		return nil
+
+	o.assign(oType{
+		Name: "int",
+		Parse: func(input string) error {
+			i, err := strconv.ParseInt(input, 10, 64)
+			if err != nil {
+				return err
+			}
+			*ptr = i
+			return nil
+		},
+		SetDefault: func(value reflect.Value) {
+			*ptr = value.Int()
+		},
 	})
 	return ptr
 }
 
-// Expression parses an expr expression
+// Expression parses an expr expression.
+// Use with a default value of `nil`
 func (o *Option) Expression() *Expression {
 	var n Expression
 	var ptr = &n
-	o.init(ptr, "expression", func(s string) error {
-		pn, err := expr.Parse(s)
-		if err != nil {
-			return err
-		}
-		*ptr = pn
-		return nil
+
+	o.assign(oType{
+		Name: "expression",
+		Parse: func(input string) error {
+			e, err := expr.Parse(input)
+			if err != nil {
+				return err
+			}
+			*ptr = e
+			return nil
+		},
+		SetDefault: func(value reflect.Value) {
+			*ptr = value.Interface().(Expression)
+		},
 	})
 	return ptr
 }
@@ -119,26 +182,45 @@ func (o *Option) Expression() *Expression {
 func (o *Option) Duration() *time.Duration {
 	var d time.Duration
 	var ptr = &d
-	o.init(ptr, "duration", func(s string) error {
-		pd, err := time.ParseDuration(s)
-		if err != nil {
-			return err
-		}
-		*ptr = pd
-		return nil
+
+	o.assign(oType{
+		Name: "duration",
+		Parse: func(input string) error {
+			pd, err := time.ParseDuration(input)
+			if err != nil {
+				return err
+			}
+			*ptr = pd
+			return nil
+		},
+		SetDefault: func(value reflect.Value) {
+			*ptr = value.Interface().(time.Duration)
+		},
 	})
 	return ptr
 }
 
 func (o *Option) Map() map[string]string {
 	var ptr = make(map[string]string)
-	o.init(ptr, "key:value", func(s string) error {
-		parts := strings.Split(s, ":")
-		if len(parts) < 2 {
-			return errors.Errorf("expected key:value in %q", s)
-		}
-		ptr[parts[0]] = strings.Join(parts[1:], ":")
-		return nil
+
+	o.assign(oType{
+		Name: "key:value",
+		Parse: func(input string) error {
+			parts := strings.Split(input, ":")
+			if len(parts) < 2 {
+				return errors.Errorf("expected key:value in %q", input)
+			}
+			ptr[parts[0]] = strings.Join(parts[1:], ":")
+			return nil
+		},
+		SetDefault: func(value reflect.Value) {
+			if !value.IsValid() || value.IsNil() {
+				return
+			}
+			for k, v := range value.Interface().(map[string]string) {
+				ptr[k] = v
+			}
+		},
 	})
 	return ptr
 }

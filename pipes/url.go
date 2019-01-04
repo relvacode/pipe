@@ -21,13 +21,15 @@ var methods = []string{
 }
 
 func init() {
-	for _, method := range methods {
+	for i := range methods {
+		method := methods[i]
 		pipe.Define(pipe.Pkg{
 			Name: pipe.Family("url", strings.ToLower(method)),
 			Constructor: func(console *console.Command) pipe.Pipe {
 				return &URLPipe{
 					method:  method,
-					headers: console.Option("header").Map(),
+					headers: console.Option("header").Default(nil).Map(),
+					body:    console.Option("body").Default(false).Bool(),
 					url:     console.Arg(0).Template(),
 				}
 			},
@@ -55,6 +57,7 @@ func (r *Response) Close() error {
 type URLPipe struct {
 	method  string
 	headers map[string]string
+	body    *bool
 	url     *tap.Template
 }
 
@@ -71,10 +74,10 @@ func (p *URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
 		}
 
 		var body io.Reader
-		if p.method == http.MethodPost {
+		if *p.body {
 			body, err = tap.Reader(f.Object)
 			if err != nil {
-				return errors.Wrap(err, "url POST")
+				return errors.Wrap(err, "cannot use this input as the body of the request")
 			}
 		}
 
@@ -97,5 +100,8 @@ func (p *URLPipe) Go(ctx context.Context, stream pipe.Stream) error {
 			Headers:    resp.Header,
 			Body:       resp.Body,
 		})
+		if err != nil {
+			return err
+		}
 	}
 }
